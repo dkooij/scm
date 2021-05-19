@@ -17,6 +17,7 @@ NUM_THREADS = 16
 MAX_QUEUE_SIZE = 256
 INPUT_DIR = "input/stages"
 OUTPUT_DIR = "output"
+DONE_FILE = "done.txt"
 
 
 timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -59,16 +60,15 @@ os.makedirs(output_directory)
 for tid in range(NUM_THREADS):
     threading.Thread(target=worker, args=(tid,), daemon=True).start()
 
-
+# Add crawl jobs to queue, pause between stages
 for stage_filename in os.listdir(INPUT_DIR):
     stage_path = INPUT_DIR + "/" + stage_filename
-    print("START STAGE", stage_path)
     with open(stage_path) as stage_file:
         for url in stage_file:
             q.put(url)
     q.join()
-    print("END STAGE", stage_path)
     time.sleep(1)
 
-with open(OUTPUT_DIR + "/" + timestamp + "/done.txt", "w") as done_file:
+# Indicate that crawl has finished
+with open(OUTPUT_DIR + "/" + timestamp + "/" + DONE_FILE, "w") as done_file:
     done_file.write(datetime.now().strftime("%Y%m%d%H%M%S"))
