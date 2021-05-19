@@ -68,4 +68,7 @@ for stage_filename in os.listdir(INPUT_DIR):
             q.put(url)
     q.join()
     print("END STAGE", stage_path)
-    time.sleep(5)
+    time.sleep(1)
+
+with open(OUTPUT_DIR + "/" + timestamp + "/done.txt", "w") as done_file:
+    done_file.write(datetime.now().strftime("%Y%m%d%H%M%S"))
