@@ -1,3 +1,9 @@
+"""
+Web Crawler.
+Author: Daan Kooij
+Last modified: May 19th, 2021
+"""
+
 import os
 
 

@@ -1,7 +1,7 @@
 """
 Web Crawler.
 Author: Daan Kooij
-Last modified: May 18th, 2021
+Last modified: May 19th, 2021
 """
 
 import csv
