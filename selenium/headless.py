@@ -3,14 +3,14 @@ import time
 
 
 try:
+    binary_path = "/home/s1839047/firefox-headless/firefox/firefox"
+    extension_path = "/home/s1839047/firefox-headless/extensions/jid1-KKzOGWgsW3Ao4Q@jetpack.xpi"
+
     options = webdriver.FirefoxOptions()
     options.headless = True
-    browser = webdriver.Firefox(options=options)
 
-    extension_dir = "C:\\Users\\daank\\PycharmProjects\\SCM\\selenium\\extensions\\"
-    extensions = ["jid1-KKzOGWgsW3Ao4Q@jetpack.xpi"]
-    for extension in extensions:
-        browser.install_addon(extension_dir + extension, temporary=True)
+    browser = webdriver.Firefox(firefox_binary=binary_path, options=options)
+    browser.install_addon(extension_path)
 
     browser.get("https://tweakers.net/")
     time.sleep(5)  # To allow the the accept button to be clicked
