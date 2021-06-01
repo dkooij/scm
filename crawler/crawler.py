@@ -13,11 +13,12 @@ import threading
 import time
 
 
-NUM_THREADS = 16
+NUM_THREADS = 1
 MAX_QUEUE_SIZE = 256
 INPUT_DIR = "input/stages"
 OUTPUT_DIR = "output"
 DONE_FILE = "done.txt"
+DOWNLOAD_HEADLESS = True
 
 
 timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -34,18 +35,21 @@ def worker(tid):
         index = 0
         while True:
             url = q.get().strip()
-            download(tid_str, index, url, log_writer)
+            download(tid, index, url, log_writer)
             log_file.flush()
             q.task_done()
             index += 1
 
 
-def download(tid_str, index, url, log_writer):
-    status_code, content = downloader.download_simple(url)
+def download(tid, index, url, log_writer):
+    if DOWNLOAD_HEADLESS:
+        status_code, content, write_directive = downloader.download_headless(url, tid)
+    else:
+        status_code, content, write_directive = downloader.download_simple(url)
 
     log_writer.writerow([index, status_code, url])
     if content is not None:
-        with open(OUTPUT_DIR + "/" + timestamp + "/" + tid_str + "/" + str(index), "wb") as output_file:
+        with open(OUTPUT_DIR + "/" + timestamp + "/" + str(tid) + "/" + str(index), write_directive) as output_file:
             output_file.write(content)
 
 
