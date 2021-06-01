@@ -1,8 +1,6 @@
 import requests
 from selenium import webdriver
-from selenium.common.exceptions import TimeoutException
-import time
-
+from selenium.common.exceptions import TimeoutException, WebDriverException
 
 BROWSER_PATH = "/home/s1839047/firefox-headless/firefox/firefox"
 EXTENSION_PATH = "/home/s1839047/firefox-headless/extensions/jid1-KKzOGWgsW3Ao4Q@jetpack.xpi"
@@ -24,19 +22,21 @@ def download_simple(url):
 
 
 def download_headless(url, tid):
-    status_code, content = -1, None
-    print("start download", tid, url)
+    status, content = -1, None
     browser = get_browser(tid)
     try:
         browser.get(url)
-        # time.sleep(5)  # To allow the page to be properly loaded
         content = browser.page_source
+        status = 0
     except TimeoutException:
-        print("ERROR download", tid, url)
-        pass
+        print("  ERROR timeout download", tid, url)
+        status = 1
+    except WebDriverException:
+        print("  ERROR webdriver download", tid, url)
+        status = 2
+    # print("finish download", tid, url)
     browser.delete_all_cookies()
-    print("finish download", tid, url)
-    return -1, content, "w"
+    return status, content, "w"
 
 
 def get_browser(tid):
@@ -57,3 +57,8 @@ def close_browser(tid):
     if tid in browsers:
         browsers[tid].close()
         del browsers[tid]
+
+
+def close_browsers():
+    for tid in list(browsers.keys()):
+        close_browser(tid)

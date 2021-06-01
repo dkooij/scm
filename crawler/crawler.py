@@ -13,7 +13,7 @@ import threading
 import time
 
 
-NUM_THREADS = 1
+NUM_THREADS = 16
 MAX_QUEUE_SIZE = 256
 INPUT_DIR = "input/stages"
 OUTPUT_DIR = "output"
@@ -35,21 +35,21 @@ def worker(tid):
         index = 0
         while True:
             url = q.get().strip()
-            download(tid, index, url, log_writer)
+            download(tid_str, index, url, log_writer)
             log_file.flush()
             q.task_done()
             index += 1
 
 
-def download(tid, index, url, log_writer):
+def download(tid_str, index, url, log_writer):
     if DOWNLOAD_HEADLESS:
-        status_code, content, write_directive = downloader.download_headless(url, tid)
+        status_code, content, write_directive = downloader.download_headless(url, int(tid_str))
     else:
         status_code, content, write_directive = downloader.download_simple(url)
 
     log_writer.writerow([index, status_code, url])
     if content is not None:
-        with open(OUTPUT_DIR + "/" + timestamp + "/" + str(tid) + "/" + str(index), write_directive) as output_file:
+        with open(OUTPUT_DIR + "/" + timestamp + "/" + tid_str + "/" + str(index), write_directive) as output_file:
             output_file.write(content)
 
 
@@ -73,3 +73,6 @@ for stage_filename in os.listdir(INPUT_DIR):
 # Indicate that crawl has finished
 with open(OUTPUT_DIR + "/" + timestamp + "/" + DONE_FILE, "w") as done_file:
     done_file.write(datetime.now().strftime("%Y%m%d%H%M%S"))
+
+# Close all the browsers (clean up resources)
+downloader.close_browsers()
