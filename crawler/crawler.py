@@ -1,14 +1,14 @@
 """
 Web Crawler.
 Author: Daan Kooij
-Last modified: May 19th, 2021
+Last modified: June 1st, 2021
 """
 
 import csv
 from datetime import datetime
+import downloader
 import os
 import queue
-import requests
 import threading
 import time
 
@@ -41,15 +41,12 @@ def worker(tid):
 
 
 def download(tid_str, index, url, log_writer):
-    status_code = -1
-    try:
-        response = requests.get(url, allow_redirects=True)
-        status_code = response.status_code
-        with open(OUTPUT_DIR + "/" + timestamp + "/" + tid_str + "/" + str(index), "wb") as output_file:
-            output_file.write(response.content)
-    except requests.RequestException:
-        pass
+    status_code, content = downloader.download_simple(url)
+
     log_writer.writerow([index, status_code, url])
+    if content is not None:
+        with open(OUTPUT_DIR + "/" + timestamp + "/" + tid_str + "/" + str(index), "wb") as output_file:
+            output_file.write(content)
 
 
 # Prepare output directory
