@@ -13,7 +13,7 @@ import threading
 import time
 
 
-NUM_THREADS = 16
+NUM_THREADS = 1
 MAX_QUEUE_SIZE = 256
 INPUT_DIR = "input/stages"
 OUTPUT_DIR = "output"
@@ -27,6 +27,7 @@ format_str = "{:0" + str(len(str(NUM_THREADS - 1))) + "d}"
 
 
 def worker(tid):
+    prev_status_code = 0
     tid_str = format_str.format(tid)
     os.makedirs(OUTPUT_DIR + "/" + timestamp + "/" + tid_str)
     log_path = OUTPUT_DIR + "/" + timestamp + "/log." + tid_str + ".csv"
@@ -35,7 +36,10 @@ def worker(tid):
         index = 0
         while True:
             url = q.get().strip()
-            download(tid_str, index, url, log_writer)
+            status_code = download(tid_str, index, url, log_writer)
+            if status_code == prev_status_code and status_code == 1:
+                print("sequential timeout", tid)
+            prev_status_code = status_code
             log_file.flush()
             q.task_done()
             index += 1
@@ -52,10 +56,18 @@ def download(tid_str, index, url, log_writer):
         with open(OUTPUT_DIR + "/" + timestamp + "/" + tid_str + "/" + str(index), write_directive) as output_file:
             output_file.write(content)
 
+    return status_code
+
 
 # Prepare output directory
 output_directory = OUTPUT_DIR + "/" + timestamp
 os.makedirs(output_directory)
+
+# Prepare headless browsers
+# if DOWNLOAD_HEADLESS:
+#     for tid in range(NUM_THREADS):
+#         tid_str = format_str.format(tid)
+#         downloader.get_browser(tid_str)
 
 # Start threads
 for tid in range(NUM_THREADS):

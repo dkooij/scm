@@ -1,6 +1,13 @@
+"""
+Web Crawler downloader module.
+Author: Daan Kooij
+Last modified: June 1st, 2021
+"""
+
 import requests
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException, WebDriverException
+
 
 BROWSER_PATH = "/home/s1839047/firefox-headless/firefox/firefox"
 EXTENSION_PATH = "/home/s1839047/firefox-headless/extensions/jid1-KKzOGWgsW3Ao4Q@jetpack.xpi"
@@ -29,10 +36,10 @@ def download_headless(url, tid):
         content = browser.page_source
         status = 0
     except TimeoutException:
-        print("  ERROR timeout download", tid, url)
+        # print("  ERROR timeout download", tid, url)
         status = 1
     except WebDriverException:
-        print("  ERROR webdriver download", tid, url)
+        # print("  ERROR webdriver download", tid, url)
         status = 2
     # print("finish download", tid, url)
     browser.delete_all_cookies()
@@ -48,7 +55,7 @@ def get_browser(tid):
         browser = webdriver.Firefox(firefox_binary=BROWSER_PATH, service_log_path=LOG_PATH, options=options)
         browser.set_page_load_timeout(10)
         browser.implicitly_wait(10)
-        browser.install_addon(EXTENSION_PATH)
+        # browser.install_addon(EXTENSION_PATH)  # TODO: this sometimes causes all future requests to timeout...
         browsers[tid] = browser
     return browser
 
