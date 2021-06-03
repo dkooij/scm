@@ -1,12 +1,15 @@
 """
 Web Crawler downloader module.
 Author: Daan Kooij
-Last modified: June 1st, 2021
+Last modified: June 3rd, 2021
 """
 
 import requests
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException, WebDriverException
+import time
+
+from request_status import RequestStatus
 
 
 BROWSER_PATH = "/home/s1839047/firefox-headless/firefox/firefox"
@@ -17,33 +20,63 @@ LOG_PATH = "/dev/null"
 browsers = dict()
 
 
-def download_simple(url):
-    status_code, content = -1, None
+def download_simple(url, timeout=10):
+    content = None
+
     try:
-        response = requests.get(url, allow_redirects=True)
-        status_code = response.status_code
+        response = requests.get(url, allow_redirects=True, timeout=timeout)
         content = response.content
+        # http_status = response.status_code
+        request_status = RequestStatus.SIMPLE_SUCCESS
+    except requests.ReadTimeout:
+        request_status = RequestStatus.SIMPLE_TIMEOUT
     except requests.RequestException:
-        pass
-    return status_code, content, "wb"
+        request_status = RequestStatus.SIMPLE_ERROR
+
+    return request_status, content, "wb"
 
 
-def download_headless(url, tid):
-    status, content = -1, None
+def download_headless(url, tid, attempts=3):
+    headless_status, headless_content = download_headless_attempt(url, tid)
+
+    # If the headless request results in a timeout
+    if headless_status == RequestStatus.HEADLESS_TIMEOUT:
+        # Do a simple request to check if it is a true timeout
+        simple_status, simple_content, _ = download_simple(url, timeout=5)
+
+        # If the simple request does result in a success
+        if simple_status == RequestStatus.SIMPLE_SUCCESS:
+            # Try to perform the headless request again
+            for _ in range(1, attempts):
+                close_browser(tid)  # But first restart the browser instance (maybe it is broken)
+                headless_status, headless_content = download_headless_attempt(url, tid)
+
+                # If the headless request now does not result in a timeout
+                if headless_status != RequestStatus.HEADLESS_TIMEOUT:
+                    return headless_status, headless_content, "w"  # Yay, a success, we can stop now
+
+            # If our headless re-attempts were still in vain, use the simple request results
+            return simple_status, simple_content, "wb"
+
+    # If we get here, conclude that the headless request yielded true results
+    return headless_status, headless_content, "w"
+
+
+def download_headless_attempt(url, tid):
+    content = None
+
     browser = get_browser(tid)
     try:
         browser.get(url)
         content = browser.page_source
-        status = 0
+        browser.delete_all_cookies()
+        request_status = RequestStatus.HEADLESS_SUCCESS
     except TimeoutException:
-        # print("  ERROR timeout download", tid, url)
-        status = 1
+        request_status = RequestStatus.HEADLESS_TIMEOUT
     except WebDriverException:
-        # print("  ERROR webdriver download", tid, url)
-        status = 2
-    # print("finish download", tid, url)
-    browser.delete_all_cookies()
-    return status, content, "w"
+        request_status = RequestStatus.HEADLESS_ERROR
+
+    return request_status, content
 
 
 def get_browser(tid):
@@ -52,10 +85,18 @@ def get_browser(tid):
     else:
         options = webdriver.FirefoxOptions()
         options.headless = True
-        browser = webdriver.Firefox(firefox_binary=BROWSER_PATH, service_log_path=LOG_PATH, options=options)
+        while True:
+            try:
+                browser = webdriver.Firefox(firefox_binary=BROWSER_PATH, service_log_path=LOG_PATH, options=options)
+                break  # Browser successfully initialized!
+            except TimeoutException:
+                # Unable to initialize browser, likely due to do OS resources being temporarily unavailable.
+                # Try again in 5 seconds.
+                print("ERROR during browser initialization (thread " + tid + ")")
+                time.sleep(5)
         browser.set_page_load_timeout(10)
         browser.implicitly_wait(10)
-        # browser.install_addon(EXTENSION_PATH)  # TODO: this sometimes causes all future requests to timeout...
+        browser.install_addon(EXTENSION_PATH)
         browsers[tid] = browser
     return browser
 
