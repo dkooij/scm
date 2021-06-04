@@ -1,7 +1,7 @@
 """
 Web Crawler downloader module.
 Author: Daan Kooij
-Last modified: June 3rd, 2021
+Last modified: June 4th, 2021
 """
 
 import requests
@@ -13,6 +13,7 @@ from request_status import RequestStatus
 
 
 BROWSER_PATH = "/home/s1839047/firefox-headless/firefox/firefox"
+GECKODRIVER_PATH = "/home/s1839047/firefox-headless/drivers/geckodriver"
 EXTENSION_PATH = "/home/s1839047/firefox-headless/extensions/jid1-KKzOGWgsW3Ao4Q@jetpack.xpi"
 LOG_PATH = "/dev/null"
 
@@ -87,7 +88,8 @@ def get_browser(tid):
         options.headless = True
         while True:
             try:
-                browser = webdriver.Firefox(firefox_binary=BROWSER_PATH, service_log_path=LOG_PATH, options=options)
+                browser = webdriver.Firefox(firefox_binary=BROWSER_PATH, executable_path=GECKODRIVER_PATH,
+                                            service_log_path=LOG_PATH, options=options)
                 break  # Browser successfully initialized!
             except TimeoutException:
                 # Unable to initialize browser, likely due to do OS resources being temporarily unavailable.
