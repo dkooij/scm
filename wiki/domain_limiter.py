@@ -1,7 +1,7 @@
 """
-From a list of hyperlinks, select at most a certain amount from each second-level domain.
+From a list of hyperlinks, randomly select at most a certain amount from each second-level domain.
 Author: Daan Kooij
-Last modified: May 18th, 2021
+Last modified: June 4th, 2021
 """
 
 from collections import defaultdict
