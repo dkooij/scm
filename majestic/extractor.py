@@ -10,6 +10,7 @@ import os
 
 INPUT = "input/majestic_million.csv"
 OUTPUT = "output/links.txt"
+PREFIX = "http://"
 TLD = "nl"
 
 if not os.path.exists("output"):
@@ -20,4 +21,4 @@ with open(INPUT) as input_file:
     with open(OUTPUT, "w") as output_file:
         for row in csv_reader:
             if row[3] == TLD:
-                output_file.write(row[2] + "\n")
+                output_file.write(PREFIX + row[2] + "\n")
