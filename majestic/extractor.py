@@ -1,7 +1,7 @@
 """
 From a Majestic Million csv file, extract all second-level domains from a specific top-level domain.
 Author: Daan Kooij
-Last modified: May 18th, 2021
+Last modified: June 4th, 2021
 """
 
 import csv
