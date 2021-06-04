@@ -1,5 +1,5 @@
 """
-From a list of hyperlinks, select at most a certain amount from each second-level domain prioritised by link popularity.
+From a list of hyperlinks, select at most a certain amount from each second-level domain.
 Author: Daan Kooij
 Last modified: June 4th, 2021
 """
@@ -14,6 +14,7 @@ OUTPUT = "output/links_nl_limited.txt"
 OUTPUT_STAGES = "output/stages"
 SELECTION_METHOD = 0  # 0: random selection, 1: prioritise popular links
 SLD_LIMIT = 100
+
 
 link_dict = defaultdict(lambda: defaultdict(int))
 stage_dict = defaultdict(list)
