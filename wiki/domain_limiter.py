@@ -12,21 +12,25 @@ import random
 INPUT = "output/links_nl.txt"
 OUTPUT = "output/links_nl_limited.txt"
 OUTPUT_STAGES = "output/stages"
-SELECTION_METHOD = 0  # 0: random selection, 1: prioritise popular links
-SLD_LIMIT = 100
+CONSIDERATION_PROBABILITY = 1  # The probability that an individual link will be considered.
+SELECTION_METHOD = 0  # 0: Random selection, 1: Prioritise popular links.
+SLD_LIMIT = 100  # The maximum number of links per second-level domain.
 
 
 link_dict = defaultdict(lambda: defaultdict(int))
 stage_dict = defaultdict(list)
 
+random.seed("EMOTION")
 with open(INPUT) as input_file:
     for link in input_file:
+        if CONSIDERATION_PROBABILITY < 1:
+            if random.random() > CONSIDERATION_PROBABILITY:
+                continue  # Skip this link, go to the next loop cycle.
         website = link.strip().lower().split("://")[1].split("/")[0]
         website_parts = website.split(".")
         sl_domain = website_parts[-2] + "." + website_parts[-1]
         link_dict[sl_domain][link] += 1
 
-random.seed("EMOTION")
 with open(OUTPUT, "w") as output_file:
     for sl_domain, links_dict in link_dict.items():
         if SELECTION_METHOD == 0:
