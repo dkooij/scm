@@ -1,5 +1,5 @@
 """
-From a list of hyperlinks, randomly select at most a certain amount from each second-level domain.
+From a list of hyperlinks, select at most a certain amount from each second-level domain prioritised by link popularity.
 Author: Daan Kooij
 Last modified: June 4th, 2021
 """
@@ -12,9 +12,10 @@ import random
 INPUT = "output/links_nl.txt"
 OUTPUT = "output/links_nl_limited.txt"
 OUTPUT_STAGES = "output/stages"
+SELECTION_METHOD = 0  # 0: random selection, 1: prioritise popular links
 SLD_LIMIT = 100
 
-link_dict = defaultdict(set)
+link_dict = defaultdict(lambda: defaultdict(int))
 stage_dict = defaultdict(list)
 
 with open(INPUT) as input_file:
@@ -22,16 +23,17 @@ with open(INPUT) as input_file:
         website = link.strip().lower().split("://")[1].split("/")[0]
         website_parts = website.split(".")
         sl_domain = website_parts[-2] + "." + website_parts[-1]
-        link_dict[sl_domain].add(link)
+        link_dict[sl_domain][link] += 1
 
 random.seed("EMOTION")
 with open(OUTPUT, "w") as output_file:
-    for sl_domain, links in link_dict.items():
-        link_list = list(links)
-        if len(link_list) <= SLD_LIMIT:
-            selected_links = link_list
+    for sl_domain, links_dict in link_dict.items():
+        if SELECTION_METHOD == 0:
+            links = list(links_dict.keys())
+            selected_links = random.sample(links, min(SLD_LIMIT, len(links)))
         else:
-            selected_links = random.sample(link_list, SLD_LIMIT)
+            links_popularity = sorted(links_dict.items(), key=lambda x: x[1], reverse=True)
+            selected_links = [link for (link, _) in links_popularity[:SLD_LIMIT]]
         for stage, link in zip(range(SLD_LIMIT), selected_links):
             stage_dict[stage].append(link)
             output_file.write(link)
