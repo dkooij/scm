@@ -1,9 +1,10 @@
 """
 From a Wikipedia dump, extract all hyperlinks.
 Author: Daan Kooij
-Last modified: May 18th, 2021
+Last modified: June 4th, 2021
 """
 
+import html
 import os
 import re
 
@@ -23,7 +24,10 @@ pattern = re.compile("(?<=[\"\\[><;=\n ])http[^|\"\\]><;\n ]*")
 with open(INPUT) as input_file:
     with open(OUTPUT, "w") as output_file:
         for line in input_file:
+            line = html.unescape(line)
             links = pattern.findall(line)
             for link in links:
                 if is_valid_url(link):
+                    if link[-1] == '/':
+                        link = link[:-1]
                     output_file.write(link + "\n")
