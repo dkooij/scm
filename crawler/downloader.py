@@ -6,7 +6,7 @@ Last modified: June 4th, 2021
 
 import requests
 from selenium import webdriver
-from selenium.common.exceptions import TimeoutException, WebDriverException
+from selenium.common.exceptions import TimeoutException, WebDriverException, InvalidSessionIdException
 import time
 
 from request_status import RequestStatus
@@ -105,7 +105,10 @@ def get_browser(tid):
 
 def close_browser(tid):
     if tid in browsers:
-        browsers[tid].quit()
+        try:
+            browsers[tid].quit()
+        except InvalidSessionIdException:
+            print("ERROR cannot close browser (invalid session ID)")
         del browsers[tid]
 
 
