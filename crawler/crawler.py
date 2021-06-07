@@ -1,7 +1,7 @@
 """
 Web Crawler.
 Author: Daan Kooij
-Last modified: June 3rd, 2021
+Last modified: June 7th, 2021
 """
 
 import csv
@@ -23,39 +23,37 @@ DOWNLOAD_HEADLESS = True
 
 timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 q = queue.Queue(maxsize=MAX_QUEUE_SIZE)
-format_str = "{:0" + str(len(str(NUM_THREADS - 1))) + "d}"
 
 
 def worker(tid_int):
-    tid = format_str.format(tid_int)
-    os.makedirs(OUTPUT_DIR + "/" + timestamp + "/" + tid)
-    log_path = OUTPUT_DIR + "/" + timestamp + "/log." + tid + ".csv"
+    tid = str(tid_int)
+    log_path = OUTPUT_DIR + "/" + timestamp + "/log-thread-" + tid + ".csv"
     with open(log_path, "w", newline="") as log_file:
         log_writer = csv.writer(log_file)
-        index = 0
         while True:
-            url = q.get().strip()
-            download(tid, index, url, log_writer)
+            (stage_index, line_index, url) = q.get()
+            url = url.strip()
+            download(tid, stage_index, line_index, url, log_writer)
             log_file.flush()
             q.task_done()
-            index += 1
 
 
-def download(tid, index, url, log_writer):
+def download(tid, stage_filename, line_index, url, log_writer):
     dl_timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     if DOWNLOAD_HEADLESS:
         status_code, content, write_directive = downloader.download_headless(url, tid)
     else:
         status_code, content, write_directive = downloader.download_simple(url)
 
-    log_writer.writerow([index, status_code, dl_timestamp, url])
+    log_writer.writerow([stage_filename, line_index, status_code, dl_timestamp, url])
     if content is not None:
-        with open(OUTPUT_DIR + "/" + timestamp + "/" + tid + "/" + str(index), write_directive) as output_file:
+        with open(OUTPUT_DIR + "/" + timestamp + "/pages/" + stage_filename + "-" + str(line_index),
+                  write_directive) as output_file:
             output_file.write(content)
 
 
 # Prepare output directory
-output_directory = OUTPUT_DIR + "/" + timestamp
+output_directory = OUTPUT_DIR + "/" + timestamp + "/pages"
 os.makedirs(output_directory)
 
 # Start threads
@@ -63,11 +61,13 @@ for tid_int in range(NUM_THREADS):
     threading.Thread(target=worker, args=(tid_int,), daemon=True).start()
 
 # Add crawl jobs to queue, pause between stages
-for stage_filename in os.listdir(INPUT_DIR):
+for stage_filename in sorted(os.listdir(INPUT_DIR)):
     stage_path = INPUT_DIR + "/" + stage_filename
+    line_index = 0
     with open(stage_path) as stage_file:
         for url in stage_file:
-            q.put(url)
+            line_index += 1
+            q.put((stage_filename.split(".")[0], line_index, url))
     q.join()
     time.sleep(1)
 
