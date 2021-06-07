@@ -1,7 +1,7 @@
 """
 Web Crawler downloader module.
 Author: Daan Kooij
-Last modified: June 4th, 2021
+Last modified: June 7th, 2021
 """
 
 import requests
