@@ -105,7 +105,7 @@ def get_browser(tid):
 
 def close_browser(tid):
     if tid in browsers:
-        browsers[tid].close()
+        browsers[tid].quit()
         del browsers[tid]
 
 
