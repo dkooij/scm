@@ -31,9 +31,9 @@ def worker(tid_int):
     with open(log_path, "w", newline="") as log_file:
         log_writer = csv.writer(log_file)
         while True:
-            (stage_index, line_index, url) = q.get()
+            (stage_filename, line_index, url) = q.get()
             url = url.strip()
-            download(tid, stage_index, line_index, url, log_writer)
+            download(tid, stage_filename, line_index, url, log_writer)
             log_file.flush()
             q.task_done()
 
