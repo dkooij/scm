@@ -12,10 +12,12 @@ import queue
 import threading
 import time
 
-from crawler.request_status import RequestStatus
+from request_status import RequestStatus
+
 
 NUM_THREADS = 8
 MAX_QUEUE_SIZE = 256
+FILE_SIZE_LIMIT_MB = 10
 INPUT_DIR = "input/stages"
 OUTPUT_DIR = "output"
 DONE_FILE = "done.txt"
@@ -52,11 +54,19 @@ def download(tid, stage_filename, line_index, url, log_writer):
     else:
         status_code, content, write_directive = downloader.download_simple(url)
 
-    log_writer.writerow([stage_filename, line_index, status_code, dl_timestamp, url])
+    # If the download was successful, write the content to disk
     if content is not None:
-        with open(OUTPUT_DIR + "/" + timestamp + "/pages/" + stage_filename + "-" + str(line_index),
-                  write_directive) as output_file:
+        content_file_path = OUTPUT_DIR + "/" + timestamp + "/pages/" + stage_filename + "-" + str(line_index)
+        with open(content_file_path, write_directive) as output_file:
             output_file.write(content)
+
+        # If the download is too large, remove it from disk
+        file_size = os.path.getsize(content_file_path)
+        if file_size > FILE_SIZE_LIMIT_MB * 1048576:
+            os.remove(content_file_path)
+
+    # Write information about the download to the log file
+    log_writer.writerow([stage_filename, line_index, status_code, dl_timestamp, url])
 
     return status_code
 
