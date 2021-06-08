@@ -12,6 +12,7 @@ import queue
 import threading
 import time
 
+from crawler.request_status import RequestStatus
 
 NUM_THREADS = 8
 MAX_QUEUE_SIZE = 256
@@ -26,6 +27,7 @@ q = queue.Queue(maxsize=MAX_QUEUE_SIZE)
 
 
 def worker(tid_int):
+    prev_status_code = None
     tid = str(tid_int)
     log_path = OUTPUT_DIR + "/" + timestamp + "/log-thread-" + tid + ".csv"
     with open(log_path, "w", newline="") as log_file:
@@ -33,7 +35,12 @@ def worker(tid_int):
         while True:
             (stage_filename, line_index, url) = q.get()
             url = url.strip()
-            download(tid, stage_filename, line_index, url, log_writer)
+            status_code = download(tid, stage_filename, line_index, url, log_writer)
+            if status_code == prev_status_code == RequestStatus.HEADLESS_ERROR:
+                # For the (rare) event that there are consecutive headless errors:
+                # Restart the browser instance (maybe it is broken)
+                downloader.close_browser(tid)
+            prev_status_code = status_code
             log_file.flush()
             q.task_done()
 
@@ -50,6 +57,8 @@ def download(tid, stage_filename, line_index, url, log_writer):
         with open(OUTPUT_DIR + "/" + timestamp + "/pages/" + stage_filename + "-" + str(line_index),
                   write_directive) as output_file:
             output_file.write(content)
+
+    return status_code
 
 
 # Prepare output directory
