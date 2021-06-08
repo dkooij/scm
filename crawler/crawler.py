@@ -34,6 +34,7 @@ def worker(tid_int):
     log_path = OUTPUT_DIR + "/" + timestamp + "/log-thread-" + tid + ".csv"
     with open(log_path, "w", newline="") as log_file:
         log_writer = csv.writer(log_file)
+        log_writer.writerow(["Stage file", "URL index", "Status code", "Timestamp", "File present", "URL"])
         while True:
             (stage_filename, line_index, url) = q.get()
             url = url.strip()
@@ -49,6 +50,7 @@ def worker(tid_int):
 
 def download(tid, stage_filename, line_index, url, log_writer):
     dl_timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    file_present = False
     if DOWNLOAD_HEADLESS:
         status_code, content, write_directive = downloader.download_headless(url, tid)
     else:
@@ -59,14 +61,16 @@ def download(tid, stage_filename, line_index, url, log_writer):
         content_file_path = OUTPUT_DIR + "/" + timestamp + "/pages/" + stage_filename + "-" + str(line_index)
         with open(content_file_path, write_directive) as output_file:
             output_file.write(content)
+            file_present = True
 
         # If the download is too large, remove it from disk
         file_size = os.path.getsize(content_file_path)
         if file_size > FILE_SIZE_LIMIT_MB * 1048576:
             os.remove(content_file_path)
+            file_present = False
 
     # Write information about the download to the log file
-    log_writer.writerow([stage_filename, line_index, status_code, dl_timestamp, url])
+    log_writer.writerow([stage_filename, line_index, status_code, dl_timestamp, file_present, url])
 
     return status_code
 
