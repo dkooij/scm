@@ -1,7 +1,7 @@
 """
 From a list of hyperlinks, select at most a certain amount from each second-level domain.
 Author: Daan Kooij
-Last modified: June 9th, 2021
+Last modified: June 11th, 2021
 """
 
 from collections import defaultdict
@@ -14,7 +14,7 @@ OUTPUT = "output/links_nl_limited.txt"
 OUTPUT_STAGES = "output/stages"
 CONSIDERATION_PROBABILITY = 1  # The probability that an individual link will be considered.
 SELECTION_METHOD = 0  # 0: Random selection, 1: Prioritise popular links.
-SLD_LIMIT = 30  # The maximum number of links per second-level domain.
+SLD_LIMIT = 100  # The maximum number of links per second-level domain.
 
 
 link_dict = defaultdict(lambda: defaultdict(int))
