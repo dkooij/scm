@@ -1,7 +1,7 @@
 """
 Web Crawler downloader module.
 Author: Daan Kooij
-Last modified: June 7th, 2021
+Last modified: June 11th, 2021
 """
 
 import requests
@@ -14,7 +14,8 @@ from request_status import RequestStatus
 
 BROWSER_PATH = "/home/s1839047/firefox-headless/firefox/firefox"
 GECKODRIVER_PATH = "/home/s1839047/firefox-headless/drivers/geckodriver"
-EXTENSION_PATH = "/home/s1839047/firefox-headless/extensions/jid1-KKzOGWgsW3Ao4Q@jetpack.xpi"
+EXTENSION_PATHS = ["/home/s1839047/firefox-headless/extensions/jid1-KKzOGWgsW3Ao4Q@jetpack.xpi",
+                   "/home/s1839047/firefox-headless/extensions/ublock_origin-1.35.2-an+fx.xpi"]
 LOG_PATH = "/dev/null"
 
 
@@ -98,7 +99,8 @@ def get_browser(tid):
                 time.sleep(5)
         browser.set_page_load_timeout(10)
         browser.implicitly_wait(10)
-        browser.install_addon(EXTENSION_PATH)
+        for extension_path in EXTENSION_PATHS:
+            browser.install_addon(extension_path)
         browsers[tid] = browser
     return browser
 
