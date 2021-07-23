@@ -8,6 +8,10 @@ Last modified: July 23rd, 2021
 import csv
 
 
+def is_csv(filepath):
+    return filepath.endswith(".csv")
+
+
 def read_csv(filepath):
     with open(filepath) as log_file:
         log_reader = csv.reader(log_file)
