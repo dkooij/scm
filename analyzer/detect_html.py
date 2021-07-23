@@ -1,7 +1,7 @@
 """
 HTML Detector.
 Author: Daan Kooij
-Last modified: July 23nd, 2021
+Last modified: July 23rd, 2021
 """
 
 from bs4 import BeautifulSoup
