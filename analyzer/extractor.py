@@ -7,6 +7,7 @@ Last modified: July 23rd, 2021
 from datetime import datetime
 import os
 
+from analyzer.weekday import Weekday
 import csv_reader
 from data_point import DataPoint
 import detect_html
@@ -37,6 +38,9 @@ def get_data_points():
 def extract_features(log_entry, raw_page):
     data_point = DataPoint()
 
+    data_point.set_feature("size", get_file_size(log_entry))
+    data_point.set_feature("weekday", get_weekday(log_entry))
+
     return data_point
 
 
@@ -58,6 +62,19 @@ def get_timestamp(log_entry):
 
 def get_url(log_entry):
     return log_entry["URL"]
+
+
+# Meta feature extraction functions
+
+def get_file_size(log_entry):
+    file_path = get_filepath(log_entry)
+    return os.path.getsize(file_path)
+
+
+def get_weekday(log_entry):
+    timestamp = get_timestamp(log_entry)
+    weekday_int = timestamp.weekday()
+    return Weekday(weekday_int)
 
 
 # Invoke base function
