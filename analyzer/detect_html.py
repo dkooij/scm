@@ -1,7 +1,7 @@
 """
 HTML Detector.
 Author: Daan Kooij
-Last modified: July 22nd, 2021
+Last modified: July 23nd, 2021
 """
 
 from bs4 import BeautifulSoup
@@ -17,7 +17,7 @@ for filename in sorted(os.listdir(INPUT_DIR)):
         with open(filepath) as file:
             x = bool(BeautifulSoup(file, "html.parser").find())
             if not x:
-                print("??? " + filepath)
+                print("no html " + filepath)
     except UnicodeDecodeError:
         print("error with " + filepath)
 
