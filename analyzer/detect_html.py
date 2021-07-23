@@ -20,3 +20,10 @@ for filename in sorted(os.listdir(INPUT_DIR)):
                 print("??? " + filepath)
     except UnicodeDecodeError:
         print("error with " + filepath)
+
+
+def is_html(file):
+    try:
+        return bool(BeautifulSoup(file, "html.parser").find())
+    except UnicodeDecodeError:
+        return False
