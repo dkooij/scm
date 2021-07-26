@@ -1,14 +1,17 @@
 """
 HTML Detector.
 Author: Daan Kooij
-Last modified: July 23rd, 2021
+Last modified: July 26th, 2021
 """
 
 from bs4 import BeautifulSoup
 
 
-def is_html(file):
+def get_html(file):
     try:
-        return bool(BeautifulSoup(file, "html.parser").find())
+        page_html = BeautifulSoup(file, "html.parser")
+        if page_html.find():
+            return page_html
     except UnicodeDecodeError:
-        return False
+        pass
+    return False
