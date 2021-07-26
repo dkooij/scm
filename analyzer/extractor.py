@@ -1,9 +1,10 @@
 """
 Feature Extractor.
 Author: Daan Kooij
-Last modified: July 23rd, 2021
+Last modified: July 26th, 2021
 """
 
+from collections import namedtuple
 from datetime import datetime
 import os
 
@@ -28,19 +29,23 @@ def get_data_points():
         if csv_reader.is_csv(log_path):
             for log_entry in csv_reader.read_csv(log_path):
                 if should_use_page(log_entry):
-                    with open(get_filepath(log_entry)) as raw_page:
-                        if detect_html.is_html(raw_page):
-                            data_point = extract_features(log_entry, raw_page)
+                    with open(get_filepath(log_entry)) as file:
+                        page_html = detect_html.get_html(file)
+                        if page_html:  # If the HTML can be parsed successfully
+                            data_point = extract_features(log_entry, page_html)
                             data_points.append(data_point)
 
     return data_points
 
 
-def extract_features(log_entry, raw_page):
+def extract_features(log_entry, page_html):
     data_point = DataPoint()
 
+    # Meta features
     data_point.set_feature("size", get_file_size(log_entry))
     data_point.set_feature("weekday", get_weekday(log_entry))
+
+    # URL features
     data_point.set_feature("url_length", get_url_length(log_entry))
     data_point.set_feature("domain_name_length", get_domain_name_length(log_entry))
     data_point.set_feature("domain_name_digits", get_domain_name_digits(log_entry))
@@ -48,6 +53,9 @@ def extract_features(log_entry, raw_page):
     data_point.set_feature("url_subdir_depth", get_url_subdir_depth(log_entry))
     data_point.set_feature("url_subdomain_depth", get_url_subdomain_depth(log_entry))
     data_point.set_feature("protocol", get_protocol(log_entry))
+
+    # Linkage features
+    set_linkage_features(log_entry, page_html, data_point)
 
     return data_point
 
@@ -75,9 +83,17 @@ def get_url(log_entry):
 # URL helper functions
 
 def get_sl_domain(url):
-    url_after_protocol = url.split("://")[1]
-    url_before_subdirs = url_after_protocol.split("/", 1)[0]
-    return url_before_subdirs.rsplit(".", 2)[-2]
+    # Example: "https://a.b.c.nl/d/e/f" returns "c"
+    return get_root_domain(url).rsplit(".", 2)[-2]
+
+
+def get_root_domain(url):
+    # Example: "https://a.b.c.nl/d/e/f" returns "a.b.c.nl"
+    return strip_protocol(url).split("/", 1)[0]
+
+
+def strip_protocol(url):
+    return url.split("://")[-1]
 
 
 def get_url_subdirs(url):
@@ -89,6 +105,16 @@ def get_url_subdomains(url):
     url_after_protocol = url.split("://")[1]
     url_before_subdirs = url_after_protocol.split("/", 1)[0]
     return url_before_subdirs.split(".")[:-2]
+
+
+def href_to_url(href_url, root_domain, current_url):
+    if href_url.startswith("http://") or \
+            href_url.startswith("https://"):
+        return strip_protocol(href_url)
+    elif href_url.startswith("/"):
+        return root_domain + href_url
+    else:
+        return current_url + "/" + href_url
 
 
 # Meta feature extraction functions
@@ -148,6 +174,31 @@ def get_protocol(log_entry):
         return Protocol.HTTPS
     else:
         return Protocol.HTTP
+
+
+# Linkage feature extraction functions
+
+def set_linkage_features(log_entry, page_html, data_point):
+    current_url = strip_protocol(get_url(log_entry))
+    root_domain = get_root_domain(current_url)
+
+    internal_outlinks = []
+    external_outlinks = []
+    mailto_links = []
+    for a in page_html.find_all("a", href=True):
+        href_url = a["href"].strip()
+        if href_url.startswith("mailto:"):
+            mailto_links.append(href_url)
+        else:
+            link = href_to_url(href_url, root_domain, current_url)
+            if get_sl_domain(link) == get_sl_domain(current_url):
+                internal_outlinks.append(link)
+            else:
+                external_outlinks.append(link)
+
+    data_point.set_feature("internal_outlinks", len(internal_outlinks))
+    data_point.set_feature("external_outlinks", len(external_outlinks))
+    data_point.set_feature("email_links", len(mailto_links))
 
 
 # Invoke base function
