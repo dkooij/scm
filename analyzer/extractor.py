@@ -4,7 +4,6 @@ Author: Daan Kooij
 Last modified: July 26th, 2021
 """
 
-from collections import namedtuple
 from datetime import datetime
 import os
 
