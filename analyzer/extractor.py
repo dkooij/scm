@@ -182,23 +182,21 @@ def set_linkage_features(log_entry, page_html, data_point):
     current_url = strip_protocol(get_url(log_entry))
     root_domain = get_root_domain(current_url)
 
-    internal_outlinks = []
-    external_outlinks = []
-    mailto_links = []
+    internal_outlinks, external_outlinks, mailto_links = 0, 0, 0
     for a in page_html.find_all("a", href=True):
         href_url = a["href"].strip()
         if href_url.startswith("mailto:"):
-            mailto_links.append(href_url)
+            mailto_links += 1
         else:
             link = href_to_url(href_url, root_domain, current_url)
             if get_sl_domain(link) == get_sl_domain(current_url):
-                internal_outlinks.append(link)
+                internal_outlinks += 1
             else:
-                external_outlinks.append(link)
+                external_outlinks += 1
 
-    data_point.set_feature("internal_outlinks", len(internal_outlinks))
-    data_point.set_feature("external_outlinks", len(external_outlinks))
-    data_point.set_feature("email_links", len(mailto_links))
+    data_point.set_feature("internal_outlinks", internal_outlinks)
+    data_point.set_feature("external_outlinks", external_outlinks)
+    data_point.set_feature("email_links", mailto_links)
 
 
 # Invoke base function
