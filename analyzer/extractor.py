@@ -1,7 +1,7 @@
 """
 Feature Extractor.
 Author: Daan Kooij
-Last modified: July 26th, 2021
+Last modified: July 27th, 2021
 """
 
 from datetime import datetime
@@ -55,6 +55,9 @@ def extract_features(log_entry, page_html):
 
     # Linkage features
     set_linkage_features(log_entry, page_html, data_point)
+
+    # HTML features
+    set_html_features(log_entry, page_html, data_point)
 
     return data_point
 
@@ -196,6 +199,36 @@ def set_linkage_features(log_entry, page_html, data_point):
     data_point.set_feature("internal_outlinks", internal_outlinks)
     data_point.set_feature("external_outlinks", external_outlinks)
     data_point.set_feature("email_links", mailto_links)
+
+
+# HTML feature extraction functions
+
+def set_html_features(log_entry, page_html, data_point):
+    # Count number of images, tables, scripts, and meta properties
+    images, tables, scripts, meta = 0, 0, 0, 0
+    for _ in page_html.find_all("img"):
+        images += 1
+    for _ in page_html.find_all("table"):
+        tables += 1
+    for _ in page_html.find_all("script"):
+        scripts += 1
+    for _ in page_html.find_all("meta"):
+        meta += 1
+
+    # Count number of tags (total and unique)
+    tags_set, tags_total = set(), 0
+    for tag in page_html.find_all():
+        tags_total += 1
+        tags_set.add(tag.name)
+    tags_unique = len(tags_set)
+
+    # Store the computed HTML features in the data point
+    data_point.set_feature("images", images)
+    data_point.set_feature("tables", tables)
+    data_point.set_feature("scripts", scripts)
+    data_point.set_feature("meta", meta)
+    data_point.set_feature("tags_total", tags_total)
+    data_point.set_feature("tags_unique", tags_unique)
 
 
 # Invoke base function
