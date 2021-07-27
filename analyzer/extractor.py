@@ -6,6 +6,7 @@ Last modified: July 27th, 2021
 
 from datetime import datetime
 import os
+import re
 
 from analyzer.protocol import Protocol
 from analyzer.weekday import Weekday
@@ -57,7 +58,10 @@ def extract_features(log_entry, page_html):
     set_linkage_features(log_entry, page_html, data_point)
 
     # HTML features
-    set_html_features(log_entry, page_html, data_point)
+    set_html_features(page_html, data_point)
+
+    # Text features
+    set_text_features(page_html, data_point)
 
     return data_point
 
@@ -203,7 +207,7 @@ def set_linkage_features(log_entry, page_html, data_point):
 
 # HTML feature extraction functions
 
-def set_html_features(log_entry, page_html, data_point):
+def set_html_features(page_html, data_point):
     # Count number of images, tables, scripts, and meta properties
     images, tables, scripts, meta = 0, 0, 0, 0
     for _ in page_html.find_all("img"):
@@ -229,6 +233,29 @@ def set_html_features(log_entry, page_html, data_point):
     data_point.set_feature("meta", meta)
     data_point.set_feature("tags_total", tags_total)
     data_point.set_feature("tags_unique", tags_unique)
+
+
+# Text feature extraction functions
+
+def set_text_features(page_html, data_point):
+    # Extract lines from text
+    lines = []
+    for p in page_html.find_all("p"):
+        line = " ".join(p.get_text().strip().split())
+        if len(line) > 0:
+            lines.append(line)
+
+    # Count number of words (total and unique)
+    words_set, words_total = set(), 0
+    for line in lines:
+        for word in re.sub("[^\\w]", " ", line.lower()).split():
+            words_total += 1
+            words_set.add(word)
+    words_unique = len(words_set)
+
+    # Store the computed text features in the data point
+    data_point.set_feature("words_total", words_total)
+    data_point.set_feature("words_unique", words_unique)
 
 
 # Invoke base function
