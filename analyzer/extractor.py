@@ -1,7 +1,7 @@
 """
 Feature Extractor.
 Author: Daan Kooij
-Last modified: July 27th, 2021
+Last modified: August 4th, 2021
 """
 
 from datetime import datetime
@@ -90,32 +90,42 @@ def get_url(log_entry):
 
 def get_sl_domain(url):
     # Example: "https://a.b.c.nl/d/e/f" returns "c"
-    return get_root_domain(url).rsplit(".", 2)[-2]
+    try:
+        return get_root_domain(url).rsplit(".", 2)[-2]
+    except IndexError:
+        return get_root_domain(url)
 
 
 def get_root_domain(url):
     # Example: "https://a.b.c.nl/d/e/f" returns "a.b.c.nl"
-    return strip_protocol(url).split("/", 1)[0]
+    try:
+        return strip_protocol(url).split("/", 1)[0]
+    except IndexError:
+        return strip_protocol(url)
 
 
 def strip_protocol(url):
-    return url.split("://")[-1]
+    while url.startswith("http://") or url.startswith("https://"):
+        url = url.lstrip("http://").lstrip("https://")
+    return url
 
 
 def get_url_subdirs(url):
-    url_after_protocol = url.split("://")[1]
-    return url_after_protocol.split("/")[1:]
+    return strip_protocol(url).split("/")[1:]
 
 
 def get_url_subdomains(url):
-    url_after_protocol = url.split("://")[1]
-    url_before_subdirs = url_after_protocol.split("/", 1)[0]
+    url_before_subdirs = strip_protocol(url).split("/", 1)[0]
     return url_before_subdirs.split(".")[:-2]
 
 
 def href_to_url(href_url, root_domain, current_url):
-    if href_url.startswith("http://") or \
-            href_url.startswith("https://"):
+    # Remove trailing "/"
+    href_url = href_url.rstrip("/")
+
+    if len(href_url) == 0:
+        return current_url
+    elif href_url.startswith("http://") or href_url.startswith("https://"):
         return strip_protocol(href_url)
     elif href_url.startswith("/"):
         return root_domain + href_url
