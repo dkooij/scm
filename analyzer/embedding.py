@@ -1,3 +1,9 @@
+"""
+Text Embedder.
+Author: Daan Kooij
+Last modified: August 4th, 2021
+"""
+
 import math
 import torch
 from transformers import AutoTokenizer, AutoModelForMaskedLM
