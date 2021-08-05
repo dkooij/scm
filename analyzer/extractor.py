@@ -1,15 +1,15 @@
 """
 Feature Extractor.
 Author: Daan Kooij
-Last modified: August 4th, 2021
+Last modified: August 5th, 2021
 """
 
 from datetime import datetime
 import os
 import re
 
-from analyzer.protocol import Protocol
-from analyzer.weekday import Weekday
+from protocol import Protocol
+from weekday import Weekday
 import csv_reader
 from data_point import DataPoint
 import detect_html
@@ -28,7 +28,7 @@ def get_data_points():
 
         if csv_reader.is_csv(log_path):
             for log_entry in csv_reader.read_csv(log_path):
-                if should_use_page(log_entry):
+                if csv_reader.should_use_page(log_entry):
                     with open(get_filepath(log_entry)) as file:
                         page_html = detect_html.get_html(file)
                         if page_html:  # If the HTML can be parsed successfully
@@ -67,11 +67,6 @@ def extract_features(log_entry, page_html):
 
 
 # Log entry functions
-
-def should_use_page(log_entry):
-    return log_entry["File present"] == "True" and \
-           log_entry["Status code"] == "RequestStatus.HEADLESS_SUCCESS"
-
 
 def get_filepath(log_entry):
     return INPUT_DIR + "/pages/" + log_entry["Stage file"] + "-" + log_entry["URL index"]
