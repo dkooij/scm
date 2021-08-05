@@ -20,17 +20,12 @@ import detect_html
 def get_data_points():
     data_points = []
 
-    for log_filename in os.listdir(csv_reader.INPUT_DIR):
-        log_path = csv_reader.INPUT_DIR + "/" + log_filename
-
-        if csv_reader.is_csv(log_path):
-            for log_entry in csv_reader.read_csv(log_path):
-                if csv_reader.should_use_page(log_entry):
-                    with open(csv_reader.get_filepath(log_entry)) as file:
-                        page_html = detect_html.get_html(file)
-                        if page_html:  # If the HTML can be parsed successfully
-                            data_point = extract_features(log_entry, page_html)
-                            data_points.append(data_point)
+    for log_entry in csv_reader.get_log_entries():
+        with open(csv_reader.get_filepath(log_entry)) as file:
+            page_html = detect_html.get_html(file)
+            if page_html:  # If the HTML can be parsed successfully
+                data_point = extract_features(log_entry, page_html)
+                data_points.append(data_point)
 
     return data_points
 
