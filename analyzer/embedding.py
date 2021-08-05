@@ -43,9 +43,14 @@ def encode_text(tokenizer, padding_token, text, max_size=512):
     return token_vectors
 
 
-def get_embeddings(model, tensors):
+def convert_to_tensor(token_list_of_lists):
+    # token_list_of_lists = [[p1t1, p1t2, ...], [p2t1, p2t2, ...], [p3t1], [p4t1, p4t2, ...], ...]
+    return torch.cat([torch.LongTensor(token_list) for token_list in token_list_of_lists])
+
+
+def get_embeddings(model, tensor):
     with torch.no_grad():
-        out = model(input_ids=tensors)
+        out = model(input_ids=tensor)
 
     final_hidden_layer = out.hidden_states[-1]
     sentence_embeddings = torch.mean(final_hidden_layer, dim=1)
@@ -68,8 +73,9 @@ def main():
              "De studieruimte Sneek is een sporthal in het dorp Sneek die gebruikt wordt voor de tennissport."
              ]
 
-    tensors = torch.cat([torch.LongTensor(encode_text(tokenizer, padding_token, text)) for text in texts], dim=0)
-    embeddings = get_embeddings(model, tensors)
+    token_list_of_lists = [encode_text(tokenizer, padding_token, text) for text in texts]
+    tensor = convert_to_tensor(token_list_of_lists)
+    embeddings = get_embeddings(model, tensor)
 
     for (i1, l1) in zip(range(100), embeddings):
         l1 = l1.tolist()
