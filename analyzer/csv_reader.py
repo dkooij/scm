@@ -38,8 +38,12 @@ def get_log_entries():
                     yield log_entry
 
 
+def get_filename(log_entry):
+    return log_entry["Stage file"] + "-" + log_entry["URL index"]
+
+
 def get_filepath(log_entry):
-    return INPUT_DIR + "/pages/" + log_entry["Stage file"] + "-" + log_entry["URL index"]
+    return INPUT_DIR + "/pages/" + get_filename(log_entry)
 
 
 def should_use_page(log_entry):
