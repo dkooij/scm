@@ -4,9 +4,11 @@ Author: Daan Kooij
 Last modified: August 5th, 2021
 """
 
+import pickle
 from datetime import datetime
 import os
 import re
+import torch
 
 from protocol import Protocol
 from weekday import Weekday
@@ -15,22 +17,27 @@ from data_point import DataPoint
 import detect_html
 
 
+TENSOR_EMBEDDINGS_PATH = "tensor"
+PCA_MODEL_FILE = "model/pca.skl"
+
+
 # Control functions
 
 def get_data_points():
     data_points = []
+    pca_model = load_pca_model()
 
     for log_entry in csv_reader.get_log_entries():
         with open(csv_reader.get_filepath(log_entry)) as file:
             page_html = detect_html.get_html(file)
             if page_html:  # If the HTML can be parsed successfully
-                data_point = extract_features(log_entry, page_html)
+                data_point = extract_features(log_entry, page_html, pca_model)
                 data_points.append(data_point)
 
     return data_points
 
 
-def extract_features(log_entry, page_html):
+def extract_features(log_entry, page_html, pca_model):
     data_point = DataPoint()
 
     # Meta features
@@ -54,6 +61,9 @@ def extract_features(log_entry, page_html):
 
     # Text features
     set_text_features(page_html, data_point)
+
+    # Semantic features
+    set_semantic_features(pca_model, log_entry, data_point)
 
     return data_point
 
@@ -249,6 +259,27 @@ def set_text_features(page_html, data_point):
     # Store the computed text features in the data point
     data_point.set_feature("words_total", words_total)
     data_point.set_feature("words_unique", words_unique)
+
+
+# Semantic feature extraction functions
+
+def load_pca_model():
+    try:
+        return pickle.load(open(PCA_MODEL_FILE, "rb"))
+    except EOFError:
+        print("ERROR: please train PCA model first")
+        return None
+
+
+def set_semantic_features(pca_model, log_entry, data_point):
+    tensor_filename = csv_reader.get_filename(log_entry) + ".pt"
+    tensor_filepath = TENSOR_EMBEDDINGS_PATH + "/" + tensor_filename
+    if os.path.isfile(tensor_filepath):
+        tensor = torch.load(tensor_filepath)
+        semantic_features = pca_model.transform([tensor.tolist()])[0].tolist()
+        data_point.set_feature("page_content", semantic_features)
+    else:
+        print("ERROR: unable to load semantic embeddings for " + tensor_filename)
 
 
 # Invoke base function
