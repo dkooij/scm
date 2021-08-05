@@ -8,6 +8,9 @@ import math
 import torch
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 
+import csv_reader
+import detect_html
+
 
 def initialize_tokenizer():
     return AutoTokenizer.from_pretrained("pdelobelle/robbert-v2-dutch-base")
@@ -43,9 +46,9 @@ def encode_text(tokenizer, padding_token, text, max_size=512):
     return token_vectors
 
 
-def convert_to_tensor(token_list_of_lists):
+def convert_to_tensor(list_of_token_lists):
     # token_list_of_lists = [[p1t1, p1t2, ...], [p2t1, p2t2, ...], [p3t1], [p4t1, p4t2, ...], ...]
-    return torch.cat([torch.LongTensor(token_list) for token_list in token_list_of_lists])
+    return torch.cat([torch.LongTensor(token_list) for token_list in list_of_token_lists])
 
 
 def get_embeddings(model, tensor):
@@ -53,12 +56,49 @@ def get_embeddings(model, tensor):
         out = model(input_ids=tensor)
 
     final_hidden_layer = out.hidden_states[-1]
-    sentence_embeddings = torch.mean(final_hidden_layer, dim=1)
+    embeddings = torch.mean(final_hidden_layer, dim=1)
 
-    return sentence_embeddings
+    return embeddings
 
 
-def main():
+def get_mean_embedding(embeddings):
+    return torch.mean(embeddings, dim=0)
+
+
+def get_page_text(page_html):
+    words = []
+
+    for p in page_html.find_all("p"):
+        line_words = p.get_text().strip().split()
+        words.extend(line_words)
+
+    return " ".join(words)
+
+
+def crawl_to_embeddings():
+    embeddings = []
+
+    tokenizer = initialize_tokenizer()
+    padding_token = dict(zip(tokenizer.all_special_tokens, tokenizer.all_special_ids))["<pad>"]
+    model = initialize_model()
+
+    for log_entry in csv_reader.get_log_entries():
+        with open(csv_reader.get_filepath(log_entry)) as file:
+            page_html = detect_html.get_html(file)
+            if page_html:  # If the HTML can be parsed successfully
+                page_text = get_page_text(page_html)
+                token_lists = encode_text(tokenizer, padding_token, page_text)
+                tensor = convert_to_tensor([token_lists])
+                text_embeddings = get_embeddings(model, tensor)
+                mean_embedding = get_mean_embedding(text_embeddings)
+                embeddings.append(mean_embedding)
+                print(mean_embedding)
+
+    return embeddings
+
+
+"""
+def workflow_test():
     tokenizer = initialize_tokenizer()
     padding_token = dict(zip(tokenizer.all_special_tokens, tokenizer.all_special_ids))["<pad>"]
     model = initialize_model()
@@ -86,6 +126,7 @@ def main():
         print()
 
     print("Done")
+"""
 
 
-main()
+crawl_to_embeddings()
