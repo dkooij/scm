@@ -1,15 +1,19 @@
 """
 Text Embedder.
 Author: Daan Kooij
-Last modified: August 4th, 2021
+Last modified: August 5th, 2021
 """
 
+import itertools
 import math
 import torch
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 
 import csv_reader
 import detect_html
+
+
+OUTPUT_DIR = "tensor"
 
 
 def initialize_tokenizer():
@@ -75,14 +79,19 @@ def get_page_text(page_html):
     return " ".join(words)
 
 
-def crawl_to_embeddings():
-    embeddings = []
+def store_tensor(tensor, log_entry):
+    output_path = OUTPUT_DIR + "/" + csv_reader.get_filename(log_entry) + ".pt"
+    torch.save(tensor, output_path)
 
+
+def crawl_to_embeddings(start_index=0):
     tokenizer = initialize_tokenizer()
     padding_token = dict(zip(tokenizer.all_special_tokens, tokenizer.all_special_ids))["<pad>"]
     model = initialize_model()
 
-    for log_entry in csv_reader.get_log_entries():
+    for i, log_entry in zip(itertools.count(), csv_reader.get_log_entries()):
+        if start_index > i:
+            continue
         with open(csv_reader.get_filepath(log_entry)) as file:
             page_html = detect_html.get_html(file)
             if page_html:  # If the HTML can be parsed successfully
@@ -91,41 +100,7 @@ def crawl_to_embeddings():
                 tensor = convert_to_tensor([token_lists])
                 text_embeddings = get_embeddings(model, tensor)
                 mean_embedding = get_mean_embedding(text_embeddings)
-                embeddings.append(mean_embedding)
-
-    return embeddings
-
-
-"""
-def workflow_test():
-    tokenizer = initialize_tokenizer()
-    padding_token = dict(zip(tokenizer.all_special_tokens, tokenizer.all_special_ids))["<pad>"]
-    model = initialize_model()
-
-    texts = ["Goedemorgen! Het is de start van een nieuwe, mooie dag.",
-             "Goedemorgen! Het is de start van een nieuwe, fijne dag.",
-             "Goedemorgen! Het is de start van een nieuwe, slechte dag.",
-             "Hallo! Hoe gaat het met jullie vandaag?",
-             "De Tennishal Sneek is een sporthal in de stad Sneek die gebruikt wordt voor de tennissport.",
-             "De Tennishal Sneek is een sporthal in de stad Sneek die gebruikt wordt voor de tennissport.",
-             "De Tennishal Sneek is een sporthal in het dorp Sneek die gebruikt wordt voor de tennissport.",
-             "De studieruimte Sneek is een sporthal in het dorp Sneek die gebruikt wordt voor de tennissport."
-             ]
-
-    token_list_of_lists = [encode_text(tokenizer, padding_token, text) for text in texts]
-    tensor = convert_to_tensor(token_list_of_lists)
-    embeddings = get_embeddings(model, tensor)
-
-    for (i1, l1) in zip(range(100), embeddings):
-        l1 = l1.tolist()
-        for (i2, l2) in zip(range(100), embeddings):
-            l2 = l2.tolist()
-            x = sum([abs(sum(v)) for v in zip(l1, [-pos for pos in l2])]) / len(l1)
-            print(i1, i2, "{:.6f}".format(x))
-        print()
-
-    print("Done")
-"""
+                store_tensor(mean_embedding, log_entry)
 
 
 crawl_to_embeddings()
