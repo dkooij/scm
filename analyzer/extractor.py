@@ -15,21 +15,18 @@ from data_point import DataPoint
 import detect_html
 
 
-INPUT_DIR = "input"
-
-
 # Control functions
 
 def get_data_points():
     data_points = []
 
-    for log_filename in os.listdir(INPUT_DIR):
-        log_path = INPUT_DIR + "/" + log_filename
+    for log_filename in os.listdir(csv_reader.INPUT_DIR):
+        log_path = csv_reader.INPUT_DIR + "/" + log_filename
 
         if csv_reader.is_csv(log_path):
             for log_entry in csv_reader.read_csv(log_path):
                 if csv_reader.should_use_page(log_entry):
-                    with open(get_filepath(log_entry)) as file:
+                    with open(csv_reader.get_filepath(log_entry)) as file:
                         page_html = detect_html.get_html(file)
                         if page_html:  # If the HTML can be parsed successfully
                             data_point = extract_features(log_entry, page_html)
@@ -67,10 +64,6 @@ def extract_features(log_entry, page_html):
 
 
 # Log entry functions
-
-def get_filepath(log_entry):
-    return INPUT_DIR + "/pages/" + log_entry["Stage file"] + "-" + log_entry["URL index"]
-
 
 def get_timestamp(log_entry):
     timestamp_str = log_entry["Timestamp"]
@@ -131,7 +124,7 @@ def href_to_url(href_url, root_domain, current_url):
 # Meta feature extraction functions
 
 def get_file_size(log_entry):
-    file_path = get_filepath(log_entry)
+    file_path = csv_reader.get_filepath(log_entry)
     return os.path.getsize(file_path)
 
 

@@ -8,6 +8,9 @@ Last modified: August 5th, 2021
 import csv
 
 
+INPUT_DIR = "input"
+
+
 def is_csv(filepath):
     return filepath.endswith(".csv")
 
@@ -23,3 +26,7 @@ def read_csv(filepath):
 def should_use_page(log_entry):
     return log_entry["File present"] == "True" and \
            log_entry["Status code"] == "RequestStatus.HEADLESS_SUCCESS"
+
+
+def get_filepath(log_entry):
+    return INPUT_DIR + "/pages/" + log_entry["Stage file"] + "-" + log_entry["URL index"]
