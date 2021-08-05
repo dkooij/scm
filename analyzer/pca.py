@@ -33,7 +33,9 @@ def train_pca(n_components=24, indices=None):
     embeddings = load_embeddings(indices=indices)
     pca.fit(embeddings)
 
-    return pca
+    # Save model to disk
+    with open(OUTPUT_FILE, "wb") as file:
+        pickle.dump(pca, file)
 
 
 train_pca()
