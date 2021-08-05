@@ -92,7 +92,6 @@ def crawl_to_embeddings():
                 text_embeddings = get_embeddings(model, tensor)
                 mean_embedding = get_mean_embedding(text_embeddings)
                 embeddings.append(mean_embedding)
-                print(mean_embedding)
 
     return embeddings
 
