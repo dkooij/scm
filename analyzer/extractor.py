@@ -27,7 +27,7 @@ def get_data_points():
     data_points = []
     pca_model = load_pca_model()
 
-    for log_entry in csv_reader.get_log_entries():
+    for log_entry in csv_reader.get_all_log_entries():
         with open(csv_reader.get_filepath(log_entry)) as file:
             page_html = detect_html.get_html(file)
             if page_html:  # If the HTML can be parsed successfully

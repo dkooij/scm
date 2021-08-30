@@ -89,7 +89,7 @@ def crawl_to_embeddings(start_index=0):
     padding_token = dict(zip(tokenizer.all_special_tokens, tokenizer.all_special_ids))["<pad>"]
     model = initialize_model()
 
-    for i, log_entry in zip(itertools.count(), csv_reader.get_log_entries()):
+    for i, log_entry in zip(itertools.count(), csv_reader.get_all_log_entries()):
         if start_index > i:
             continue
         with open(csv_reader.get_filepath(log_entry)) as file:

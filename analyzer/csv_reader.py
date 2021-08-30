@@ -28,14 +28,25 @@ def read_csv(filepath):
 
 # Crawler-specific CSV reader functions
 
-def get_log_entries():
+def get_log_paths():
+    log_paths = []
     for log_filename in os.listdir(INPUT_DIR):
         log_path = INPUT_DIR + "/" + log_filename
-
         if is_csv(log_path):
-            for log_entry in read_csv(log_path):
-                if should_use_page(log_entry):
-                    yield log_entry
+            log_paths.append(log_path)
+    return log_paths
+
+
+def get_log_entries(log_path):
+    for log_entry in read_csv(log_path):
+        if should_use_page(log_entry):
+            yield log_entry
+
+
+def get_all_log_entries():
+    for log_path in get_log_paths():
+        for log_entry in get_log_entries(log_path):
+            yield log_entry
 
 
 def get_filename(log_entry):
