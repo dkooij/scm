@@ -10,11 +10,11 @@ import os
 import re
 import torch
 
-from protocol import Protocol
-from weekday import Weekday
 import csv_reader
 from data_point import DataPoint
 import detect_html
+from protocol import Protocol
+from weekday import Weekday
 
 
 TENSOR_EMBEDDINGS_PATH = "tensor"
