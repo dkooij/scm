@@ -98,6 +98,10 @@ def crawl_to_embeddings(start_index=0):
                 page_text = get_page_text(page_html)
                 token_lists = encode_text(tokenizer, padding_token, page_text)
                 tensor = convert_to_tensor([token_lists])
+                # TODO: If page_text is long, there will be a lot of token lists.
+                # TODO: This can result in excessive memory usage when calling get_embeddings.
+                # TODO: Investigate: is the problem still occurring when using GPU?
+                # TODO: Alternative solution: use smaller batches.
                 text_embeddings = get_embeddings(model, tensor)
                 mean_embedding = get_mean_embedding(text_embeddings)
                 store_tensor(mean_embedding, log_entry)
