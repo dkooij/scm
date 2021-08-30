@@ -1,7 +1,7 @@
 """
 Text Embedder.
 Author: Daan Kooij
-Last modified: August 5th, 2021
+Last modified: August 30th, 2021
 """
 
 import itertools
