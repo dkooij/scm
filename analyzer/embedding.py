@@ -101,7 +101,7 @@ def crawl_to_embeddings(start_index=0):
     for i, log_entry in zip(itertools.count(), csv_reader.get_all_log_entries()):
         if start_index > i:
             continue
-        with open(csv_reader.get_filepath(log_entry)) as file:
+        with open(csv_reader.get_filepath(log_entry), "rb") as file:
             page_html = detect_html.get_html(file)
             if page_html:  # If the HTML can be parsed successfully
                 page_text = get_page_text(page_html)
