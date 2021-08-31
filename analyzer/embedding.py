@@ -1,7 +1,7 @@
 """
 Text Embedder.
 Author: Daan Kooij
-Last modified: August 30th, 2021
+Last modified: August 31st, 2021
 """
 
 import itertools
@@ -14,6 +14,7 @@ import detect_html
 
 
 OUTPUT_DIR = "tensor"
+BATCH_LIMIT = 16
 
 
 def initialize_tokenizer():
@@ -30,7 +31,7 @@ def initialize_model():
     model = model.to(device)
 
     # Return model
-    return model
+    return model, device
 
 
 def encode_text(tokenizer, padding_token, text, max_size=512):
@@ -50,19 +51,27 @@ def encode_text(tokenizer, padding_token, text, max_size=512):
     return token_vectors
 
 
-def convert_to_tensor(list_of_token_lists):
+def convert_to_tensor(list_of_token_lists, device):
     # token_list_of_lists = [[p1t1, p1t2, ...], [p2t1, p2t2, ...], [p3t1], [p4t1, p4t2, ...], ...]
-    return torch.cat([torch.LongTensor(token_list) for token_list in list_of_token_lists])
+    tensor = torch.cat([torch.LongTensor(token_list) for token_list in list_of_token_lists])
+    return tensor.to(device)
 
 
-def get_embeddings(model, tensor):
-    with torch.no_grad():
-        out = model(input_ids=tensor)
+def get_embeddings(model, tensor_input):
+    tensor_batches = torch.split(tensor_input, BATCH_LIMIT)
 
-    final_hidden_layer = out.hidden_states[-1]
-    embeddings = torch.mean(final_hidden_layer, dim=1)
+    embeddings_batches = []
 
-    return embeddings
+    for tensor_batch in tensor_batches:
+        with torch.no_grad():
+            out = model(input_ids=tensor_batch)
+        final_hidden_layer = out.hidden_states[-1]
+        embeddings_batch = torch.mean(final_hidden_layer, dim=1)
+        embeddings_batches.append(embeddings_batch)
+
+    embeddings_output = torch.cat(embeddings_batches)
+
+    return embeddings_output
 
 
 def get_mean_embedding(embeddings):
@@ -87,7 +96,7 @@ def store_tensor(tensor, log_entry):
 def crawl_to_embeddings(start_index=0):
     tokenizer = initialize_tokenizer()
     padding_token = dict(zip(tokenizer.all_special_tokens, tokenizer.all_special_ids))["<pad>"]
-    model = initialize_model()
+    model, device = initialize_model()
 
     for i, log_entry in zip(itertools.count(), csv_reader.get_all_log_entries()):
         if start_index > i:
@@ -97,11 +106,7 @@ def crawl_to_embeddings(start_index=0):
             if page_html:  # If the HTML can be parsed successfully
                 page_text = get_page_text(page_html)
                 token_lists = encode_text(tokenizer, padding_token, page_text)
-                tensor = convert_to_tensor([token_lists])
-                # TODO: If page_text is long, there will be a lot of token lists.
-                # TODO: This can result in excessive memory usage when calling get_embeddings.
-                # TODO: Investigate: is the problem still occurring when using GPU?
-                # TODO: Alternative solution: use smaller batches.
+                tensor = convert_to_tensor([token_lists], device)
                 text_embeddings = get_embeddings(model, tensor)
                 mean_embedding = get_mean_embedding(text_embeddings)
                 store_tensor(mean_embedding, log_entry)
