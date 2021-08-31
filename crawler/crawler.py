@@ -1,17 +1,17 @@
 """
 Web Crawler.
 Author: Daan Kooij
-Last modified: June 8th, 2021
+Last modified: August 31st, 2021
 """
 
 import csv
 from datetime import datetime
-import downloader
 import os
 import queue
 import threading
 import time
 
+import downloader
 from request_status import RequestStatus
 
 
