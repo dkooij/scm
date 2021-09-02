@@ -27,11 +27,15 @@ def initialize_model():
     model.eval()
 
     # Move model to GPU if available
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = get_compute_device()
     model = model.to(device)
 
     # Return model
     return model, device
+
+
+def get_compute_device():
+    return "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def encode_text(tokenizer, padding_token, text, max_size=512):

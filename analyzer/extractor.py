@@ -13,6 +13,7 @@ import torch
 import csv_reader
 from data_point import DataPoint
 import detect_html
+from embedding import get_compute_device
 from protocol import Protocol
 from weekday import Weekday
 
@@ -26,19 +27,19 @@ PCA_MODEL_FILE = "model/pca.skl"
 def get_data_points():
     data_points = []
     pca_model = load_pca_model()
-    tensor_device = "cuda" if torch.cuda.is_available() else "cpu"
+    compute_device = get_compute_device()
 
     for log_entry in csv_reader.get_all_log_entries():
         with open(csv_reader.get_filepath(log_entry)) as file:
             page_html = detect_html.get_html(file)
             if page_html:  # If the HTML can be parsed successfully
-                data_point = extract_features(log_entry, page_html, pca_model, tensor_device)
+                data_point = extract_features(log_entry, page_html, pca_model, compute_device)
                 data_points.append(data_point)
 
     return data_points
 
 
-def extract_features(log_entry, page_html, pca_model, tensor_device):
+def extract_features(log_entry, page_html, pca_model, compute_device):
     data_point = DataPoint()
 
     # Meta features
@@ -64,7 +65,7 @@ def extract_features(log_entry, page_html, pca_model, tensor_device):
     set_text_features(page_html, data_point)
 
     # Semantic features
-    set_semantic_features(pca_model, log_entry, data_point, tensor_device)
+    set_semantic_features(pca_model, log_entry, data_point, compute_device)
 
     return data_point
 
@@ -272,11 +273,11 @@ def load_pca_model():
         return None
 
 
-def set_semantic_features(pca_model, log_entry, data_point, tensor_device):
+def set_semantic_features(pca_model, log_entry, data_point, compute_device):
     tensor_filename = csv_reader.get_filename(log_entry) + ".pt"
     tensor_filepath = TENSOR_EMBEDDINGS_PATH + "/" + tensor_filename
     if os.path.isfile(tensor_filepath):
-        tensor = torch.load(tensor_filepath)
+        tensor = torch.load(tensor_filepath, map_location=compute_device)
         semantic_features = pca_model.transform([tensor.tolist()])[0].tolist()
         data_point.set_feature("page_content", semantic_features)
     else:
