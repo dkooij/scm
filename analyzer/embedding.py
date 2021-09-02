@@ -1,7 +1,7 @@
 """
 Text Embedder.
 Author: Daan Kooij
-Last modified: August 31st, 2021
+Last modified: September 2nd, 2021
 """
 
 import itertools
@@ -112,4 +112,4 @@ def crawl_to_embeddings(start_index=0):
                 store_tensor(mean_embedding, log_entry)
 
 
-crawl_to_embeddings()
+# crawl_to_embeddings()
