@@ -16,7 +16,7 @@ def is_csv(filepath):
 
 
 def read_csv(filepath):
-    with open(filepath) as log_file:
+    with open(filepath, encoding="utf-8") as log_file:
         log_reader = csv.reader(log_file)
         header_row = next(log_reader, None)
         for log_row in log_reader:
