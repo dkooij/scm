@@ -9,6 +9,11 @@ import csv
 import os
 
 
+# CSV reader setup
+
+csv.field_size_limit(10485760)
+
+
 # Generic CSV reader functions
 
 def is_csv(filepath):
