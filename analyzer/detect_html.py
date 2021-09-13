@@ -1,7 +1,7 @@
 """
 HTML Detector.
 Author: Daan Kooij
-Last modified: August 31st, 2021
+Last modified: September 13th, 2021
 """
 
 from bs4 import BeautifulSoup
@@ -13,3 +13,13 @@ def get_html(file):
     if page_html.find("html"):
         return page_html
     return False
+
+
+def get_page_text(page_html):
+    words = []
+
+    for p in page_html.find_all("p"):
+        line_words = p.get_text().strip().split()
+        words.extend(line_words)
+
+    return " ".join(words)

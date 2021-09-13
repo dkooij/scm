@@ -1,7 +1,7 @@
 """
 Text Embedder.
 Author: Daan Kooij
-Last modified: September 2nd, 2021
+Last modified: September 13th, 2021
 """
 
 import itertools
@@ -82,16 +82,6 @@ def get_mean_embedding(embeddings):
     return torch.mean(embeddings, dim=0)
 
 
-def get_page_text(page_html):
-    words = []
-
-    for p in page_html.find_all("p"):
-        line_words = p.get_text().strip().split()
-        words.extend(line_words)
-
-    return " ".join(words)
-
-
 def store_tensor(tensor, log_entry):
     output_path = OUTPUT_DIR + "/" + csv_reader.get_filename(log_entry) + ".pt"
     torch.save(tensor, output_path)
@@ -108,7 +98,7 @@ def crawl_to_embeddings(start_index=0):
         with open(csv_reader.get_filepath(log_entry), "rb") as file:
             page_html = detect_html.get_html(file)
             if page_html:  # If the HTML can be parsed successfully
-                page_text = get_page_text(page_html)
+                page_text = detect_html.get_page_text(page_html)
                 token_lists = encode_text(tokenizer, padding_token, page_text)
                 tensor = convert_to_tensor([token_lists], device)
                 text_embeddings = get_embeddings(model, tensor)
