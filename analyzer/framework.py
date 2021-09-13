@@ -21,9 +21,6 @@ PAGE_TEXT_DIR = "text"
 SV_DIR = "semantic"
 
 
-target_list = ["20210612"]
-
-
 def _extract_page_text(log_path, crawl_dir, output_filepath):
     with open(output_filepath, "w", newline="", encoding="utf-8") as output_file:
         output_writer = csv.writer(output_file)
@@ -40,38 +37,43 @@ def _extract_page_text(log_path, crawl_dir, output_filepath):
     print(log_path + " done")
 
 
-def extract_page_text():
-    for target in target_list:
-        processes = []
-        output_dir = EXTRACT_ROOT + "/" + target + "/" + PAGE_TEXT_DIR
-        os.makedirs(output_dir, exist_ok=True)
+def extract_page_text(target):
+    processes = []
+    output_dir = EXTRACT_ROOT + "/" + target + "/" + PAGE_TEXT_DIR
+    os.makedirs(output_dir, exist_ok=True)
 
-        crawl_dir = CRAWLS_ROOT + "/" + target
-        for tid, log_path in zip(itertools.count(), csv_reader.get_log_paths(crawl_dir)):
-            output_filepath = output_dir + "/" + "text-" + str(tid) + ".csv"
-            process = Process(target=_extract_page_text, args=(log_path, crawl_dir, output_filepath))
-            process.start()
-            processes.append(process)
+    crawl_dir = CRAWLS_ROOT + "/" + target
+    for tid, log_path in zip(itertools.count(), csv_reader.get_log_paths(crawl_dir)):
+        output_filepath = output_dir + "/" + "text-" + str(tid) + ".csv"
+        process = Process(target=_extract_page_text, args=(log_path, crawl_dir, output_filepath))
+        process.start()
+        processes.append(process)
 
-        for process in processes:
-            process.join()
+    for process in processes:
+        process.join()
 
 
-def extract_semantic_vectors():
+def extract_semantic_vectors(target):
     # Local import, because computationally expensive
     import embedding
 
     model_quad = embedding.get_model_quad()
 
-    for target in target_list:
-        tensor_dir = EXTRACT_ROOT + "/" + target + "/" + SV_DIR
-        os.makedirs(tensor_dir, exist_ok=True)
+    text_dir = EXTRACT_ROOT + "/" + target + "/" + PAGE_TEXT_DIR
+    tensor_dir = EXTRACT_ROOT + "/" + target + "/" + SV_DIR
+    os.makedirs(tensor_dir, exist_ok=True)
 
-        text_dir = EXTRACT_ROOT + "/" + target + "/" + PAGE_TEXT_DIR
-        for log_entry in csv_reader.get_all_log_entries(text_dir, ignore_validity_check=True):
-            embedding.compute_embedding(log_entry, model_quad, tensor_dir)
+    for log_entry in csv_reader.get_all_log_entries(text_dir, ignore_validity_check=True):
+        embedding.compute_embedding(log_entry, model_quad, tensor_dir)
+
+
+def run():
+    target_list = ["20210612"]
+
+    for target in target_list:
+        extract_page_text(target)
+        extract_semantic_vectors(target)
 
 
 if __name__ == "__main__":
-    extract_page_text()
-    extract_semantic_vectors()
+    run()
