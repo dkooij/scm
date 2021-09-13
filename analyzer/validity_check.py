@@ -1,10 +1,12 @@
 """
+TODO: Possibly deprecated. Before using, check if all assumptions are still met.
+
 Detect the validity of page crawls.
 In some scenarios, the Web crawler stores a duplicate version
   of a previous page under the name of the current page.
 This module detects such false duplicate crawled pages.
 Author: Daan Kooij
-Last modified: September 2nd, 2021
+Last modified: September 13th, 2021
 """
 
 import hashlib
@@ -18,6 +20,7 @@ import similarity
 
 
 DISTANCE_THRESHOLD = 0.01
+INPUT_DIR = "input"
 
 
 def detect_duplicates_semantic():
@@ -29,7 +32,7 @@ def detect_duplicates_semantic():
 
     pca_model = extractor.load_pca_model()
     compute_device = embedding.get_compute_device()
-    for log_path in csv_reader.get_log_paths():
+    for log_path in csv_reader.get_log_paths(INPUT_DIR):
         previous_semantic_vector = None
         for log_entry in csv_reader.get_log_entries(log_path):
             data_point = DataPoint()
@@ -58,14 +61,14 @@ def detect_duplicates_semantic():
 
 
 def detect_duplicates_overlap():
-    for log_path in csv_reader.get_log_paths():
+    for log_path in csv_reader.get_log_paths(INPUT_DIR):
         previous_page_text_hash, previous_data_point = None, None
         for log_entry in csv_reader.get_log_entries(log_path):
 
-            with open(csv_reader.get_filepath(log_entry), "rb") as file:
+            with open(csv_reader.get_filepath(log_entry, INPUT_DIR), "rb") as file:
                 page_html = detect_html.get_html(file)
                 if page_html:  # If the HTML can be parsed successfully
-                    page_text = embedding.get_page_text(page_html)
+                    page_text = detect_html.get_page_text(page_html)
 
                     if len(page_text) == 0:
                         # If the page contains no "text", then check if the page
