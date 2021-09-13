@@ -25,7 +25,7 @@ target_list = ["20210612"]
 
 
 def _extract_page_text(log_path, crawl_dir, output_filepath):
-    with open(output_filepath, "w", newline="") as output_file:
+    with open(output_filepath, "w", newline="", encoding="utf-8") as output_file:
         output_writer = csv.writer(output_file)
         output_writer.writerow(["Stage file", "URL index", "URL", "Page text"])
 
