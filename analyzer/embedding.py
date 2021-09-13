@@ -13,12 +13,15 @@ import csv_reader
 import detect_html
 
 
-OUTPUT_DIR = "tensor"
 BATCH_LIMIT = 16
 
 
 def initialize_tokenizer():
     return AutoTokenizer.from_pretrained("pdelobelle/robbert-v2-dutch-base")
+
+
+def get_padding_token(tokenizer):
+    return dict(zip(tokenizer.all_special_tokens, tokenizer.all_special_ids))["<pad>"]
 
 
 def initialize_model():
@@ -36,6 +39,14 @@ def initialize_model():
 
 def get_compute_device():
     return "cuda" if torch.cuda.is_available() else "cpu"
+
+
+def get_model_quad():
+    tokenizer = initialize_tokenizer()
+    padding_token = get_padding_token(tokenizer)
+    model, device = initialize_model()
+
+    return tokenizer, padding_token, model, device
 
 
 def encode_text(tokenizer, padding_token, text, max_size=512):
@@ -63,6 +74,7 @@ def convert_to_tensor(list_of_token_lists, device):
 
 def get_embeddings(model, tensor_input):
     tensor_batches = torch.split(tensor_input, BATCH_LIMIT)
+    # TODO: Should we actually use more than one batch? That is quite computationally expensive.
 
     embeddings_batches = []
 
@@ -82,28 +94,32 @@ def get_mean_embedding(embeddings):
     return torch.mean(embeddings, dim=0)
 
 
-def store_tensor(tensor, log_entry):
-    output_path = OUTPUT_DIR + "/" + csv_reader.get_filename(log_entry) + ".pt"
+def store_tensor(tensor, log_entry, output_dir):
+    output_path = output_dir + "/" + csv_reader.get_filename(log_entry) + ".pt"
     torch.save(tensor, output_path)
 
 
-def crawl_to_embeddings(start_index=0):
-    tokenizer = initialize_tokenizer()
-    padding_token = dict(zip(tokenizer.all_special_tokens, tokenizer.all_special_ids))["<pad>"]
-    model, device = initialize_model()
+def compute_embedding(log_entry, model_quad, output_dir, page_text=None):
+    if page_text is None:
+        page_text = log_entry["Page text"]
 
-    for i, log_entry in zip(itertools.count(), csv_reader.get_all_log_entries()):
+    tokenizer, padding_token, model, device = model_quad
+
+    token_lists = encode_text(tokenizer, padding_token, page_text)
+    tensor = convert_to_tensor([token_lists], device)
+    text_embeddings = get_embeddings(model, tensor)
+    mean_embedding = get_mean_embedding(text_embeddings)
+    store_tensor(mean_embedding, log_entry, output_dir)
+
+
+def crawl_to_embeddings(input_dir, output_dir, start_index=0):
+    model_quad = get_model_quad()
+
+    for i, log_entry in zip(itertools.count(), csv_reader.get_all_log_entries(input_dir)):
         if start_index > i:
             continue
-        with open(csv_reader.get_filepath(log_entry), "rb") as file:
+        with open(csv_reader.get_filepath(log_entry, input_dir), "rb") as file:
             page_html = detect_html.get_html(file)
             if page_html:  # If the HTML can be parsed successfully
                 page_text = detect_html.get_page_text(page_html)
-                token_lists = encode_text(tokenizer, padding_token, page_text)
-                tensor = convert_to_tensor([token_lists], device)
-                text_embeddings = get_embeddings(model, tensor)
-                mean_embedding = get_mean_embedding(text_embeddings)
-                store_tensor(mean_embedding, log_entry)
-
-
-# crawl_to_embeddings()
+                compute_embedding(log_entry, model_quad, output_dir, page_text=page_text)
