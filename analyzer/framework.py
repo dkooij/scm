@@ -18,6 +18,7 @@ BATCH_SIZE = 1000
 CRAWLS_ROOT = "D:/crawls"
 EXTRACT_ROOT = "D:/extracted"
 PAGE_TEXT_DIR = "text"
+SV_DIR = "semantic"
 
 
 target_list = ["20210612"]
@@ -50,5 +51,21 @@ def extract_page_text():
             Process(target=_extract_page_text, args=(log_path, crawl_dir, output_filepath)).start()
 
 
+def extract_semantic_vectors():
+    # Local import, because computationally expensive
+    import embedding
+
+    model_quad = embedding.get_model_quad()
+
+    for target in target_list:
+        tensor_dir = EXTRACT_ROOT + "/" + target + "/" + SV_DIR
+        os.makedirs(tensor_dir, exist_ok=True)
+
+        text_dir = EXTRACT_ROOT + "/" + target + "/" + PAGE_TEXT_DIR
+        for log_entry in csv_reader.get_all_log_entries(text_dir, ignore_validity_check=True):
+            embedding.compute_embedding(log_entry, model_quad, tensor_dir)
+
+
 if __name__ == "__main__":
     extract_page_text()
+    extract_semantic_vectors()
