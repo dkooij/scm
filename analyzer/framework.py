@@ -2,10 +2,11 @@
 Data pre-processing framework.
 Takes a collection of web crawls, and converts it to pre-processed data points.
 Author: Daan Kooij
-Last modified: September 13th, 2021
+Last modified: September 14th, 2021
 """
 
 import csv
+from datetime import datetime
 import itertools
 from multiprocessing import Process
 import os
@@ -19,6 +20,10 @@ CRAWLS_ROOT = "D:/crawls"
 EXTRACT_ROOT = "D:/extracted"
 PAGE_TEXT_DIR = "text"
 SV_DIR = "semantic"
+
+
+def get_timestamp():
+    return datetime.now().strftime("%H:%M:%S") + " - "
 
 
 def _extract_page_text(log_path, crawl_dir, output_filepath):
@@ -37,7 +42,7 @@ def _extract_page_text(log_path, crawl_dir, output_filepath):
     print(log_path + " done")
 
 
-def extract_page_text(target):
+def extract_page_text(target, batch_index=0):
     processes = []
     output_dir = EXTRACT_ROOT + "/" + target + "/" + PAGE_TEXT_DIR
     os.makedirs(output_dir, exist_ok=True)
@@ -52,8 +57,10 @@ def extract_page_text(target):
     for process in processes:
         process.join()
 
+    print(get_timestamp() + "Finished text extraction batch " + str(batch_index))
 
-def extract_semantic_vectors(target):
+
+def extract_semantic_vectors(target, batch_index=0, start_index=0):
     # Local import, because computationally expensive
     import embedding
 
@@ -63,16 +70,24 @@ def extract_semantic_vectors(target):
     tensor_dir = EXTRACT_ROOT + "/" + target + "/" + SV_DIR
     os.makedirs(tensor_dir, exist_ok=True)
 
-    for log_entry in csv_reader.get_all_log_entries(text_dir, ignore_validity_check=True):
-        embedding.compute_embedding(log_entry, model_quad, tensor_dir)
+    for i, log_entry in zip(itertools.count(start=batch_index),
+                            csv_reader.get_all_log_entries(text_dir, ignore_validity_check=True)):
+        if i >= start_index:
+            embedding.compute_embedding(log_entry, model_quad, tensor_dir)
+            print(get_timestamp() + "Finished embedding batch " + str(i))
 
 
 def run():
     target_list = ["20210612"]
+    start_index_text = 0
+    start_index_embedding = 0
 
-    for target in target_list:
-        extract_page_text(target)
-        extract_semantic_vectors(target)
+    for i, target in zip(itertools.count(), target_list):
+        if i >= start_index_text:
+            extract_page_text(target, batch_index=i)
+        if i * 8 >= start_index_embedding - 7:
+            extract_semantic_vectors(target, batch_index=i*8, start_index=start_index_embedding)
+        print(get_timestamp() + "Finished processing " + target + "\n")
 
 
 if __name__ == "__main__":
