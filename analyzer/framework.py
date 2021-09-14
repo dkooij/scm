@@ -42,8 +42,6 @@ def _extract_page_text(log_path, crawl_dir, output_filepath):
                     output_writer.writerow([log_entry["Stage file"], log_entry["URL index"],
                                             log_entry["URL"], page_text])
 
-    print(log_path + " done")
-
 
 def extract_page_text(target, batch_index=0):
     processes = []
@@ -64,8 +62,7 @@ def extract_page_text(target, batch_index=0):
 
 
 def extract_semantic_vectors(target, batch_index=0, start_index=0):
-    # Local import, because computationally expensive
-    import embedding
+    import embedding  # Local import, because computationally expensive
 
     model_quad = embedding.get_model_quad()
 
@@ -84,12 +81,12 @@ def run():
     target_list = ["20210612", "20210613", "20210614", "20210615", "20210616", "20210617", "20210618"]
 
     # Starting point configuration parameters
-    should_split_train_text = True
+    should_split_train_test = True
     start_index_text = 0
     start_index_embedding = 0
 
     # Split domains into training and testing domains
-    if should_split_train_text:
+    if should_split_train_test:
         import train_test  # Local import to save resources
         train_test.split_domains(FIRST_STAGE_PATH, EXTRACT_ROOT, TRAIN_TEST_DIR, TRAIN_FRACTION)
 
