@@ -70,24 +70,25 @@ def extract_semantic_vectors(target, batch_index=0, start_index=0):
     tensor_dir = EXTRACT_ROOT + "/" + target + "/" + SV_DIR
     os.makedirs(tensor_dir, exist_ok=True)
 
-    for i, log_entry in zip(itertools.count(start=batch_index),
-                            csv_reader.get_all_log_entries(text_dir, ignore_validity_check=True)):
+    for i, log_path in zip(itertools.count(start=batch_index), csv_reader.get_log_paths(text_dir)):
         if i >= start_index:
-            embedding.compute_embedding(log_entry, model_quad, tensor_dir)
-            print(get_timestamp() + "Finished embedding batch " + str(i))
+            for log_entry in csv_reader.get_log_entries(log_path, ignore_validity_check=True):
+                embedding.compute_embedding(log_entry, model_quad, tensor_dir)
+            print(get_timestamp() + "Finished semantic embedding batch " + str(i))
 
 
 def run():
-    target_list = ["20210612"]
+    target_list = ["20210612", "20210613", "20210614", "20210615", "20210616", "20210617", "20210618"]
     start_index_text = 0
     start_index_embedding = 0
 
     for i, target in zip(itertools.count(), target_list):
+        print(get_timestamp() + "Start processing daily crawl " + target)
         if i >= start_index_text:
             extract_page_text(target, batch_index=i)
         if i * 8 >= start_index_embedding - 7:
             extract_semantic_vectors(target, batch_index=i*8, start_index=start_index_embedding)
-        print(get_timestamp() + "Finished processing " + target + "\n")
+        print(get_timestamp() + "Finished processing daily crawl " + target + "\n")
 
 
 if __name__ == "__main__":
