@@ -1,7 +1,7 @@
 """
 Feature Extractor.
 Author: Daan Kooij
-Last modified: September 2nd, 2021
+Last modified: September 14th, 2021
 """
 
 import pickle
@@ -100,9 +100,13 @@ def get_root_domain(url):
 
 
 def strip_protocol(url):
-    while url.startswith("http://") or url.startswith("https://"):
-        url = url.lstrip("http://").lstrip("https://")
-    return url
+    while True:
+        if url.startswith("https://"):
+            url = url[8:]
+        elif url.startswith("http://"):
+            url = url[7:]
+        else:
+            return url
 
 
 def get_url_subdirs(url):
