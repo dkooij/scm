@@ -15,11 +15,14 @@ import csv_reader
 import detect_html
 
 
-BATCH_SIZE = 1000
 CRAWLS_ROOT = "D:/crawls"
 EXTRACT_ROOT = "D:/extracted"
+FIRST_STAGE_PATH = "D:/stages/links_s00.txt"
 PAGE_TEXT_DIR = "text"
 SV_DIR = "semantic"
+TRAIN_TEST_DIR = "train-test"
+
+TRAIN_FRACTION = 0.8
 
 
 def get_timestamp():
@@ -79,9 +82,18 @@ def extract_semantic_vectors(target, batch_index=0, start_index=0):
 
 def run():
     target_list = ["20210612", "20210613", "20210614", "20210615", "20210616", "20210617", "20210618"]
+
+    # Starting point configuration parameters
+    should_split_train_text = True
     start_index_text = 0
     start_index_embedding = 0
 
+    # Split domains into training and testing domains
+    if should_split_train_text:
+        import train_test  # Local import to save resources
+        train_test.split_domains(FIRST_STAGE_PATH, EXTRACT_ROOT, TRAIN_TEST_DIR, TRAIN_FRACTION)
+
+    # Iterate over the crawls of all days in target_list
     for i, target in zip(itertools.count(), target_list):
         print(get_timestamp() + "Start processing daily crawl " + target)
         if i >= start_index_text:
