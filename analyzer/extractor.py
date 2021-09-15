@@ -1,7 +1,7 @@
 """
 Feature Extractor.
 Author: Daan Kooij
-Last modified: September 14th, 2021
+Last modified: September 15th, 2021
 """
 
 import pickle
@@ -43,17 +43,10 @@ def extract_features(log_entry, page_html, pca_model, compute_device):
     data_point = DataPoint()
 
     # Meta features
-    data_point.set_feature("size", get_file_size(log_entry))
-    data_point.set_feature("weekday", get_weekday(log_entry))
+    set_meta_features(log_entry, data_point)
 
     # URL features
-    data_point.set_feature("url_length", get_url_length(log_entry))
-    data_point.set_feature("domain_name_length", get_domain_name_length(log_entry))
-    data_point.set_feature("domain_name_digits", get_domain_name_digits(log_entry))
-    data_point.set_feature("domain_name_special_chars", get_domain_name_special_chars(log_entry))
-    data_point.set_feature("url_subdir_depth", get_url_subdir_depth(log_entry))
-    data_point.set_feature("url_subdomain_depth", get_url_subdomain_depth(log_entry))
-    data_point.set_feature("protocol", get_protocol(log_entry))
+    set_url_features(log_entry, data_point)
 
     # Linkage features
     set_linkage_features(log_entry, page_html, data_point)
@@ -65,7 +58,7 @@ def extract_features(log_entry, page_html, pca_model, compute_device):
     set_text_features(page_html, data_point)
 
     # Semantic features
-    set_semantic_features(pca_model, log_entry, data_point, compute_device)
+    # set_semantic_features(pca_model, log_entry, data_point, compute_device)
 
     return data_point
 
@@ -134,6 +127,11 @@ def href_to_url(href_url, root_domain, current_url):
 
 # Meta feature extraction functions
 
+def set_meta_features(log_entry, data_point):
+    data_point.set_feature("size", get_file_size(log_entry))
+    data_point.set_feature("weekday", get_weekday(log_entry))
+
+
 def get_file_size(log_entry):
     file_path = csv_reader.get_filepath(log_entry)
     return os.path.getsize(file_path)
@@ -146,6 +144,16 @@ def get_weekday(log_entry):
 
 
 # URL feature extraction functions
+
+def set_url_features(log_entry, data_point):
+    data_point.set_feature("url_length", get_url_length(log_entry))
+    data_point.set_feature("domain_name_length", get_domain_name_length(log_entry))
+    data_point.set_feature("domain_name_digits", get_domain_name_digits(log_entry))
+    data_point.set_feature("domain_name_special_chars", get_domain_name_special_chars(log_entry))
+    data_point.set_feature("url_subdir_depth", get_url_subdir_depth(log_entry))
+    data_point.set_feature("url_subdomain_depth", get_url_subdomain_depth(log_entry))
+    data_point.set_feature("protocol", get_protocol(log_entry))
+
 
 def get_url_length(log_entry):
     url = get_url(log_entry)
