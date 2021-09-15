@@ -1,7 +1,7 @@
 """
 Text Embedder.
 Author: Daan Kooij
-Last modified: September 13th, 2021
+Last modified: September 15th, 2021
 """
 
 import itertools
@@ -74,8 +74,6 @@ def convert_to_tensor(list_of_token_lists, device):
 
 def get_embeddings(model, tensor_input):
     tensor_batches = torch.split(tensor_input, BATCH_LIMIT)
-    # TODO: Should we actually use more than one batch? That is quite computationally expensive.
-
     embeddings_batches = []
 
     for tensor_batch in tensor_batches:
