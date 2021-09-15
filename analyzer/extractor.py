@@ -4,46 +4,24 @@ Author: Daan Kooij
 Last modified: September 15th, 2021
 """
 
-import pickle
 from datetime import datetime
 import os
-import re
-import torch
 
 import csv_reader
 from data_point import DataPoint
 import detect_html
-from embedding import get_compute_device
 from protocol import Protocol
 from weekday import Weekday
 
 
-TENSOR_EMBEDDINGS_PATH = "tensor"
-PCA_MODEL_FILE = "model/pca.skl"
-
-
 # Control functions
 
-def get_data_points():
-    data_points = []
-    pca_model = load_pca_model()
-    compute_device = get_compute_device()
-
-    for log_entry in csv_reader.get_all_log_entries():
-        with open(csv_reader.get_filepath(log_entry)) as file:
-            page_html = detect_html.get_html(file)
-            if page_html:  # If the HTML can be parsed successfully
-                data_point = extract_features(log_entry, page_html, pca_model, compute_device)
-                data_points.append(data_point)
-
-    return data_points
-
-
-def extract_features(log_entry, page_html, pca_model, compute_device):
-    data_point = DataPoint()
+def extract_static_features(log_entry, input_dir, page_html, page_words=None, data_point=None):
+    if data_point is None:
+        data_point = DataPoint()
 
     # Meta features
-    set_meta_features(log_entry, data_point)
+    set_meta_features(log_entry, input_dir, data_point)
 
     # URL features
     set_url_features(log_entry, data_point)
@@ -55,10 +33,9 @@ def extract_features(log_entry, page_html, pca_model, compute_device):
     set_html_features(page_html, data_point)
 
     # Text features
-    set_text_features(page_html, data_point)
-
-    # Semantic features
-    # set_semantic_features(pca_model, log_entry, data_point, compute_device)
+    if page_words is None:
+        _, page_words = detect_html.get_page_text(page_html)
+    set_text_features(page_words, data_point)
 
     return data_point
 
@@ -127,13 +104,13 @@ def href_to_url(href_url, root_domain, current_url):
 
 # Meta feature extraction functions
 
-def set_meta_features(log_entry, data_point):
-    data_point.set_feature("size", get_file_size(log_entry))
+def set_meta_features(log_entry, input_dir, data_point):
+    data_point.set_feature("size", get_file_size(log_entry, input_dir))
     data_point.set_feature("weekday", get_weekday(log_entry))
 
 
-def get_file_size(log_entry):
-    file_path = csv_reader.get_filepath(log_entry)
+def get_file_size(log_entry, input_dir):
+    file_path = csv_reader.get_filepath(log_entry, input_dir)
     return os.path.getsize(file_path)
 
 
@@ -254,20 +231,13 @@ def set_html_features(page_html, data_point):
 
 # Text feature extraction functions
 
-def set_text_features(page_html, data_point):
-    # Extract lines from text
-    lines = []
-    for p in page_html.find_all("p"):
-        line = " ".join(p.get_text().strip().split())
-        if len(line) > 0:
-            lines.append(line)
-
+def set_text_features(page_words, data_point):
     # Count number of words (total and unique)
     words_set, words_total = set(), 0
-    for line in lines:
-        for word in re.sub("[^\\w]", " ", line.lower()).split():
-            words_total += 1
-            words_set.add(word)
+    for word in page_words:
+        lowercase_word = word.lower()
+        words_total += 1
+        words_set.add(lowercase_word)
     words_unique = len(words_set)
 
     # Store the computed text features in the data point
@@ -277,24 +247,12 @@ def set_text_features(page_html, data_point):
 
 # Semantic feature extraction functions
 
-def load_pca_model():
-    try:
-        return pickle.load(open(PCA_MODEL_FILE, "rb"))
-    except EOFError:
-        print("ERROR: please train PCA model first")
-        return None
-
-
-def set_semantic_features(pca_model, log_entry, data_point, compute_device):
-    tensor_filename = csv_reader.get_filename(log_entry) + ".pt"
-    tensor_filepath = TENSOR_EMBEDDINGS_PATH + "/" + tensor_filename
-    if os.path.isfile(tensor_filepath):
-        tensor = torch.load(tensor_filepath, map_location=compute_device)
-        semantic_features = pca_model.transform([tensor.tolist()])[0].tolist()
-        data_point.set_feature("page_content", semantic_features)
-    else:
-        print("ERROR: unable to load semantic embeddings for " + tensor_filename)
-
-
-# Invoke base function
-# dps = get_data_points()
+# def set_semantic_features(pca_model, log_entry, data_point, compute_device):
+#     tensor_filename = csv_reader.get_filename(log_entry) + ".pt"
+#     tensor_filepath = TENSOR_EMBEDDINGS_PATH + "/" + tensor_filename
+#     if os.path.isfile(tensor_filepath):
+#         tensor = torch.load(tensor_filepath, map_location=compute_device)
+#         semantic_features = pca_model.transform([tensor.tolist()])[0].tolist()
+#         data_point.set_feature("page_content", semantic_features)
+#     else:
+#         print("ERROR: unable to load semantic embeddings for " + tensor_filename)
