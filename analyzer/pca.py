@@ -1,7 +1,7 @@
 """
 Reduce dimensionality of data by performing Principal Component Analysis (PCA).
 Author: Daan Kooij
-Last modified: August 5th, 2021
+Last modified: September 15th, 2021
 """
 
 import itertools
@@ -38,4 +38,9 @@ def train_pca(n_components=24, indices=None):
         pickle.dump(pca, file)
 
 
-train_pca()
+def load_pca_model(pca_model_path):
+    try:
+        return pickle.load(open(pca_model_path, "rb"))
+    except EOFError:
+        print("ERROR: please train PCA model first")
+        return None
