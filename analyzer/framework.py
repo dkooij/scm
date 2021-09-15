@@ -2,7 +2,7 @@
 Data pre-processing framework.
 Takes a collection of web crawls, and converts it to pre-processed data points.
 Author: Daan Kooij
-Last modified: September 14th, 2021
+Last modified: September 15th, 2021
 """
 
 import csv
@@ -38,7 +38,7 @@ def _extract_page_text(log_path, crawl_dir, output_filepath):
             with open(csv_reader.get_filepath(log_entry, crawl_dir), "rb") as file:
                 page_html = detect_html.get_html(file)
                 if page_html:
-                    page_text = detect_html.get_page_text(page_html)
+                    page_text, page_words = detect_html.get_page_text(page_html)
                     output_writer.writerow([log_entry["Stage file"], log_entry["URL index"],
                                             log_entry["URL"], page_text])
 
