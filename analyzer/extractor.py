@@ -1,7 +1,7 @@
 """
 Feature Extractor.
 Author: Daan Kooij
-Last modified: September 15th, 2021
+Last modified: September 28th, 2021
 """
 
 from datetime import datetime
@@ -16,12 +16,12 @@ from weekday import Weekday
 
 # Control functions
 
-def extract_static_features(log_entry, input_dir, page_html, page_words=None, data_point=None):
+def extract_static_features(log_entry, page_html, input_dir=None, page_words=None, data_point=None):
     if data_point is None:
         data_point = DataPoint()
 
     # Meta features
-    set_meta_features(log_entry, input_dir, data_point)
+    set_meta_features(log_entry, data_point, input_dir=input_dir)
 
     # URL features
     set_url_features(log_entry, data_point)
@@ -104,14 +104,17 @@ def href_to_url(href_url, root_domain, current_url):
 
 # Meta feature extraction functions
 
-def set_meta_features(log_entry, input_dir, data_point):
-    data_point.set_feature("size", get_file_size(log_entry, input_dir))
+def set_meta_features(log_entry, data_point, input_dir=None):
+    data_point.set_feature("size", get_file_size(log_entry, input_dir=input_dir))
     data_point.set_feature("weekday", get_weekday(log_entry))
 
 
-def get_file_size(log_entry, input_dir):
-    file_path = csv_reader.get_filepath(log_entry, input_dir)
-    return os.path.getsize(file_path)
+def get_file_size(log_entry, input_dir=None):
+    if input_dir is None:
+        return len(log_entry["Binary data"])
+    else:
+        file_path = csv_reader.get_filepath(log_entry, input_dir)
+        return os.path.getsize(file_path)
 
 
 def get_weekday(log_entry):

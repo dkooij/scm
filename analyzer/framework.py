@@ -2,7 +2,7 @@
 Data pre-processing framework.
 Takes a collection of web crawls, and converts it to pre-processed data points.
 Author: Daan Kooij
-Last modified: September 15th, 2021
+Last modified: September 28th, 2021
 """
 
 import csv
@@ -52,7 +52,8 @@ def _extract_page_features_text(log_path, crawl_dir, text_output_filepath, featu
                                                      log_entry["URL"], page_text])
 
                         # Retrieve and write static page features to CSV
-                        data_point = extractor.extract_static_features(log_entry, crawl_dir, page_html,
+                        data_point = extractor.extract_static_features(log_entry, page_html,
+                                                                       input_dir=crawl_dir,
                                                                        page_words=page_words)
                         if len(features_header) == 0:
                             features_header = ["Stage file", "URL index", "URL"] + \
