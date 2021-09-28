@@ -4,6 +4,7 @@ Author: Daan Kooij
 Last modified: September 28th, 2021
 """
 
+from collections import defaultdict
 from pyspark import SparkContext
 from pyspark.sql import SparkSession
 
@@ -58,24 +59,45 @@ def combine_log_entry_binary_file_rdds(log_entry_rdd, binary_file_rdd):
 
 
 def extract_data_points(raw_rdd):
-
     def extract_data_point(log_entry_tuple):
         # Converts (file_name, log_entry)-tuple to (file_name, data_point)-tuple.
         file_name, log_entry = log_entry_tuple
         page_html = detect_html.get_html(log_entry["Binary data"])
-        data_point = extractor.extract_static_features(log_entry, page_html)
+        if page_html:
+            data_point = extractor.extract_static_features(log_entry, page_html)
+        else:
+            data_point = None
         return file_name, data_point
 
-    return raw_rdd.map(extract_data_point)
+    def is_valid_page(data_point_tuple):
+        _, data_point = data_point_tuple
+        return data_point is not None
+
+    return raw_rdd.map(extract_data_point).filter(is_valid_page)
 
 
-def crawl_to_rdd(crawl_directory):
-    log_entry_rdd = get_log_entry_rdd(crawl_directory)
-    binary_file_rdd = get_binary_file_rdd(crawl_directory)
-    raw_rdd = combine_log_entry_binary_file_rdds(log_entry_rdd, binary_file_rdd)
-    data_point_rdd = extract_data_points(raw_rdd)
+def crawl_to_rdd(crawl_root, day_dir, extract_dir, configuration):
+    crawl_directory = crawl_root + "/" + day_dir
+    checkpoint_path = extract_dir + "/checkpoints/" + day_dir + ".pickle"
+    data_point_path = extract_dir + "/data_points/" + day_dir + ".pickle"
 
-    print(data_point_rdd.take(5))
+    if configuration["load checkpoint"]:
+        raw_rdd = sc.pickleFile(checkpoint_path)
+    else:
+        log_entry_rdd = get_log_entry_rdd(crawl_directory)
+        binary_file_rdd = get_binary_file_rdd(crawl_directory)
+        raw_rdd = combine_log_entry_binary_file_rdds(log_entry_rdd, binary_file_rdd)
+        if configuration["store checkpoint"]:
+            raw_rdd.saveAsPickleFile(checkpoint_path)
+
+    if configuration["extract data points"]:
+        data_point_rdd = extract_data_points(raw_rdd)
+        if configuration["store data points"]:
+            data_point_rdd.saveAsPickleFile(data_point_path)
 
 
-crawl_to_rdd("/user/s1839047/sparktest/testday")
+config = defaultdict(bool, {"load checkpoint": True,
+                            "store checkpoint": False,
+                            "extract data points": True,
+                            "store data points": True})
+crawl_to_rdd("/user/s1839047/sparktest", "testday", "/user/s1839047/extracted", config)
