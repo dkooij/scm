@@ -95,4 +95,10 @@ def raw_rdd_to_data_points(day_dir, extract_dir):
     data_point_rdd.saveAsPickleFile(data_point_path)
 
 
-crawl_to_raw_rdd("/user/s1839047/sparktest", "testday", "/user/s1839047/extracted")
+def compute_raw_rdds(crawl_root, days, extract_dir):
+    for day in days:
+        crawl_to_raw_rdd(crawl_root, day, extract_dir)
+
+
+day_list = ["20210612000004", "20210613000001"]
+compute_raw_rdds("/user/s1839047/crawls", day_list, "/user/s1839047/extracted")
