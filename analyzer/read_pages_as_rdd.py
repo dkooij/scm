@@ -111,11 +111,26 @@ def get_day_pairs(days, extract_dir):
 
         pair_path = extract_dir + "/raw_pairs/" + day1[:8] + "-" + day2[:8] + ".pickle"
         pair_rdd = day1_rdd.join(day2_rdd)
-        print("- day1 count:", day1_rdd.count())
-        print("- day2 count:", day2_rdd.count())
-        print("- pair count:", pair_rdd.count())
-        print("- firstentry:", pair_rdd.first())
         pair_rdd.saveAsPickleFile(pair_path)
+
+
+def combine_raw_pair_rdds(days, extract_dir):
+    # TODO: untested
+    first_day, last_day, union_rdd = None, None, None
+    for day1, day2 in zip(days, days[1:]):
+        pair_path = extract_dir + "/raw_pairs/" + day1[:8] + "-" + day2[:8] + ".pickle"
+        new_pair_rdd = sc.pickleFile(pair_path)
+        # TODO: add day-pair (day1,day2) field to RDD entries
+
+        if union_rdd is None:
+            union_rdd = new_pair_rdd
+            first_day = day1[:8]
+        else:
+            union_rdd = union_rdd.union(new_pair_rdd)
+        last_day = day2[:8]
+
+    union_path = extract_dir + "/raw_unions/" + first_day + "-" + last_day + ".pickle"
+    union_rdd.saveAsPickleFile(union_path)
 
 
 day_list = ["20210612000004", "20210613000001"]
