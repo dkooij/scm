@@ -1,7 +1,7 @@
 """
 Read pages from HDFS as Resilient Distributed Dataset.
 Author: Daan Kooij
-Last modified: September 28th, 2021
+Last modified: October 5th, 2021
 """
 
 from collections import defaultdict
@@ -78,17 +78,17 @@ def extract_data_points(raw_rdd):
 
 def crawl_to_rdd(crawl_root, day_dir, extract_dir, configuration):
     crawl_directory = crawl_root + "/" + day_dir
-    checkpoint_path = extract_dir + "/checkpoints/" + day_dir + ".pickle"
+    raw_rdd_path = extract_dir + "/raw_rdds/" + day_dir + ".pickle"
     data_point_path = extract_dir + "/data_points/" + day_dir + ".pickle"
 
-    if configuration["load checkpoint"]:
-        raw_rdd = sc.pickleFile(checkpoint_path)
+    if configuration["load raw rdd"]:
+        raw_rdd = sc.pickleFile(raw_rdd_path)
     else:
         log_entry_rdd = get_log_entry_rdd(crawl_directory)
         binary_file_rdd = get_binary_file_rdd(crawl_directory)
         raw_rdd = combine_log_entry_binary_file_rdds(log_entry_rdd, binary_file_rdd)
-        if configuration["store checkpoint"]:
-            raw_rdd.saveAsPickleFile(checkpoint_path)
+        if configuration["store raw"]:
+            raw_rdd.saveAsPickleFile(raw_rdd_path)
 
     if configuration["extract data points"]:
         data_point_rdd = extract_data_points(raw_rdd)
@@ -96,8 +96,8 @@ def crawl_to_rdd(crawl_root, day_dir, extract_dir, configuration):
             data_point_rdd.saveAsPickleFile(data_point_path)
 
 
-config = defaultdict(bool, {"load checkpoint": True,
-                            "store checkpoint": False,
+config = defaultdict(bool, {"load raw": False,
+                            "store raw": True,
                             "extract data points": True,
                             "store data points": True})
 crawl_to_rdd("/user/s1839047/sparktest", "testday", "/user/s1839047/extracted", config)
