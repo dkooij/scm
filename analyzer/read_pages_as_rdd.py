@@ -76,19 +76,23 @@ def extract_data_points(raw_rdd):
     return raw_rdd.map(extract_data_point).filter(is_valid_page)
 
 
-def crawl_to_rdd(crawl_root, day_dir, extract_dir, configuration):
+def crawl_to_raw_rdd(crawl_root, day_dir, extract_dir, configuration):
     crawl_directory = crawl_root + "/" + day_dir
+    raw_rdd_path = extract_dir + "/raw_rdds/" + day_dir + ".pickle"
+
+    log_entry_rdd = get_log_entry_rdd(crawl_directory)
+    binary_file_rdd = get_binary_file_rdd(crawl_directory)
+    raw_rdd = combine_log_entry_binary_file_rdds(log_entry_rdd, binary_file_rdd)
+
+    if configuration["store raw"]:
+        raw_rdd.saveAsPickleFile(raw_rdd_path)
+
+
+def raw_rdd_to_data_points(day_dir, extract_dir, configuration):
     raw_rdd_path = extract_dir + "/raw_rdds/" + day_dir + ".pickle"
     data_point_path = extract_dir + "/data_points/" + day_dir + ".pickle"
 
-    if configuration["load raw rdd"]:
-        raw_rdd = sc.pickleFile(raw_rdd_path)
-    else:
-        log_entry_rdd = get_log_entry_rdd(crawl_directory)
-        binary_file_rdd = get_binary_file_rdd(crawl_directory)
-        raw_rdd = combine_log_entry_binary_file_rdds(log_entry_rdd, binary_file_rdd)
-        if configuration["store raw"]:
-            raw_rdd.saveAsPickleFile(raw_rdd_path)
+    raw_rdd = sc.pickleFile(raw_rdd_path)
 
     if configuration["extract data points"]:
         data_point_rdd = extract_data_points(raw_rdd)
@@ -98,6 +102,6 @@ def crawl_to_rdd(crawl_root, day_dir, extract_dir, configuration):
 
 config = defaultdict(bool, {"load raw": False,
                             "store raw": True,
-                            "extract data points": True,
-                            "store data points": True})
-crawl_to_rdd("/user/s1839047/sparktest", "testday", "/user/s1839047/extracted", config)
+                            "extract data points": False,
+                            "store data points": False})
+crawl_to_raw_rdd("/user/s1839047/sparktest", "testday", "/user/s1839047/extracted", config)
