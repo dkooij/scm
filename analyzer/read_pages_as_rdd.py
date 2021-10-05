@@ -100,5 +100,24 @@ def compute_raw_rdds(crawl_root, days, extract_dir):
         crawl_to_raw_rdd(crawl_root, day, extract_dir)
 
 
+def get_day_pairs(days, extract_dir):
+    day1_rdd, day2_rdd = None, None
+
+    for day1, day2 in zip(days, days[1:]):
+        rdd1_path = extract_dir + "/raw_rdds/" + day1 + ".pickle"
+        rdd2_path = extract_dir + "/raw_rdds/" + day2 + ".pickle"
+        day1_rdd = sc.pickleFile(rdd1_path) if day2_rdd is None else day2_rdd
+        day2_rdd = sc.pickleFile(rdd2_path)
+
+        pair_path = extract_dir + "/raw_pairs/" + day1[:8] + "-" + day2[:8] + ".pickle"
+        pair_rdd = day1_rdd.join(day2_rdd)
+        print("- day1 count:", day1_rdd.count())
+        print("- day2 count:", day2_rdd.count())
+        print("- pair count:", pair_rdd.count())
+        print("- firstentry:", pair_rdd.first())
+        pair_rdd.saveAsPickleFile(pair_path)
+
+
 day_list = ["20210612000004", "20210613000001"]
-compute_raw_rdds("/user/s1839047/crawls", day_list, "/user/s1839047/extracted")
+# compute_raw_rdds("/user/s1839047/crawls", day_list, "/user/s1839047/extracted")
+get_day_pairs(day_list, "/user/s1839047/extracted")
