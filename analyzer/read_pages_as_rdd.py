@@ -1,10 +1,9 @@
 """
 Read pages from HDFS as Resilient Distributed Dataset.
 Author: Daan Kooij
-Last modified: October 5th, 2021
+Last modified: October 6th, 2021
 """
 
-from collections import defaultdict
 from pyspark import SparkContext
 from pyspark.sql import SparkSession
 
@@ -58,6 +57,21 @@ def combine_log_entry_binary_file_rdds(log_entry_rdd, binary_file_rdd):
     return joined_rdd.map(fix_joined_tuple)
 
 
+def crawl_to_raw_rdd(crawl_root, day_dir, extract_dir):
+    crawl_directory = crawl_root + "/" + day_dir
+    raw_rdd_path = extract_dir + "/raw_rdds/" + day_dir + ".pickle"
+
+    log_entry_rdd = get_log_entry_rdd(crawl_directory)
+    binary_file_rdd = get_binary_file_rdd(crawl_directory)
+    raw_rdd = combine_log_entry_binary_file_rdds(log_entry_rdd, binary_file_rdd)
+    raw_rdd.saveAsPickleFile(raw_rdd_path)
+
+
+def compute_raw_rdds(crawl_root, days, extract_dir):
+    for day in days:
+        crawl_to_raw_rdd(crawl_root, day, extract_dir)
+
+
 def extract_data_points(raw_rdd):
     def extract_data_point(log_entry_tuple):
         # Converts (file_name, log_entry)-tuple to (file_name, data_point)-tuple.
@@ -76,16 +90,6 @@ def extract_data_points(raw_rdd):
     return raw_rdd.map(extract_data_point).filter(is_valid_page)
 
 
-def crawl_to_raw_rdd(crawl_root, day_dir, extract_dir):
-    crawl_directory = crawl_root + "/" + day_dir
-    raw_rdd_path = extract_dir + "/raw_rdds/" + day_dir + ".pickle"
-
-    log_entry_rdd = get_log_entry_rdd(crawl_directory)
-    binary_file_rdd = get_binary_file_rdd(crawl_directory)
-    raw_rdd = combine_log_entry_binary_file_rdds(log_entry_rdd, binary_file_rdd)
-    raw_rdd.saveAsPickleFile(raw_rdd_path)
-
-
 def raw_rdd_to_data_points(day_dir, extract_dir):
     raw_rdd_path = extract_dir + "/raw_rdds/" + day_dir + ".pickle"
     data_point_path = extract_dir + "/data_points/" + day_dir + ".pickle"
@@ -93,11 +97,6 @@ def raw_rdd_to_data_points(day_dir, extract_dir):
     raw_rdd = sc.pickleFile(raw_rdd_path)
     data_point_rdd = extract_data_points(raw_rdd)
     data_point_rdd.saveAsPickleFile(data_point_path)
-
-
-def compute_raw_rdds(crawl_root, days, extract_dir):
-    for day in days:
-        crawl_to_raw_rdd(crawl_root, day, extract_dir)
 
 
 def get_day_pairs(days, extract_dir):
@@ -115,7 +114,6 @@ def get_day_pairs(days, extract_dir):
 
 
 def combine_raw_pair_rdds(days, extract_dir):
-    # TODO: untested
     first_day, last_day, union_rdd = None, None, None
     for day1, day2 in zip(days, days[1:]):
         pair_path = extract_dir + "/raw_pairs/" + day1[:8] + "-" + day2[:8] + ".pickle"
@@ -133,6 +131,10 @@ def combine_raw_pair_rdds(days, extract_dir):
     union_rdd.saveAsPickleFile(union_path)
 
 
-day_list = ["20210612000004", "20210613000001"]
-# compute_raw_rdds("/user/s1839047/crawls", day_list, "/user/s1839047/extracted")
-get_day_pairs(day_list, "/user/s1839047/extracted")
+crawl_dir = "/user/s1839047/crawls"
+extract_dir = "/user/s1839047/extracted"
+day_list = ["20210612000004", "20210613000001", "20210614000002"]
+
+compute_raw_rdds(crawl_dir, day_list, extract_dir)
+get_day_pairs(day_list, extract_dir)
+combine_raw_pair_rdds(day_list, extract_dir)
