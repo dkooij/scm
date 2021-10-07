@@ -140,7 +140,7 @@ def crawl_to_raw_rdd(crawl_root, day_dir):
     raw_rdd = preserve_crawl_order(raw_rdd)
     raw_rdd = extract_text(raw_rdd)
     raw_rdd = filter_out_invalid_pages(raw_rdd)
-    raw_rdd = filter_out_false_duplicates(raw_rdd)
+    # raw_rdd = filter_out_false_duplicates(raw_rdd)
     print("reached the end (for now):", raw_rdd.first())
     return raw_rdd
 
@@ -176,7 +176,7 @@ def raw_rdd_to_data_points(day_dir, extract_dir):
     data_point_rdd.saveAsPickleFile(data_point_path)
 
 
-def get_day_pairs( raw_rdds):
+def get_day_pairs(raw_rdds):
     pair_rdds = []
     for day1_rdd, day2_rdd in zip(raw_rdds, raw_rdds[1:]):
         pair_rdd = day1_rdd.join(day2_rdd)
@@ -185,13 +185,31 @@ def get_day_pairs( raw_rdds):
 
 
 def combine_pair_rdds(pair_rdds):
-    first_day, last_day, union_rdd = None, None, None
-    for pair_rdd1, pair_rdd2 in zip(pair_rdds, pair_rdds[1:]):
-        if union_rdd is None:
-            union_rdd = pair_rdd1.union(pair_rdd2)
-        else:
-            union_rdd = union_rdd.union(pair_rdd2)
+    union_rdd = pair_rdds[0]
+    for next_pair_rdd in pair_rdds[1:]:
+        union_rdd = union_rdd.union(next_pair_rdd)
     return union_rdd
+
+
+def compute_has_changed(union_rdd):
+    def map_tuple(tuple_pair):
+        file_name, (log_entry1, log_entry2) = tuple_pair
+        day1, day2 = log_entry1["Day"], log_entry2["Day"]
+        page_text1, page_text2 = log_entry1["Page text"], log_entry2["Page text"]
+        has_changed = page_text1 != page_text2
+        return file_name, (day1, day2, has_changed)
+
+    return union_rdd.map(map_tuple)
+
+
+def save_change_rdd_as_csv(change_rdd, output_directory):
+    output_path = output_directory + "/change.csv"
+
+    def to_csv_line(rdd_entry):
+        file_name, (day1, day2, has_changed) = rdd_entry
+        return ",".join([file_name, day1, day2, str(has_changed)])
+
+    change_rdd.map(to_csv_line).saveAsTextFile(output_path)
 
 
 # crawl_dir = "/user/s1839047/crawls"
@@ -199,7 +217,11 @@ def combine_pair_rdds(pair_rdds):
 # day_list = ["20210612000004", "20210613000001", "20210614000002"]
 
 crawl_dir = "/user/s1839047/crawls_test"
-day_list = ["testday"]
+day_list = ["testday", "testday2"]
+extract_dir = "/user/s1839047/extracted"
 raw_rdd_list = compute_raw_rdds(crawl_dir, day_list)
-# pair_rdd_list = get_day_pairs(day_list)
-# union_rdd_full = combine_pair_rdds(pair_rdd_list)
+pair_rdd_list = get_day_pairs(raw_rdd_list)
+union_rdd_full = combine_pair_rdds(pair_rdd_list)
+change_rdd_full = compute_has_changed(union_rdd_full)
+print(change_rdd_full.take(10))
+save_change_rdd_as_csv(change_rdd_full, extract_dir)
