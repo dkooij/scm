@@ -13,7 +13,7 @@ import extractor
 
 
 # Initialize Spark and SparkSQL context.
-sc = SparkContext(appName="SPARKTEST-S1839047")
+sc = SparkContext(appName="SCM-PROCESS-CRAWLS-S1839047")
 sc.setLogLevel("ERROR")
 spark = SparkSession.builder.getOrCreate()
 
