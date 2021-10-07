@@ -18,16 +18,18 @@ sc.setLogLevel("ERROR")
 spark = SparkSession.builder.getOrCreate()
 
 
-def get_log_entry_rdd(crawl_directory):
+def get_log_entry_rdd(crawl_directory, day_dir):
     log_entry_df = spark.read.csv(crawl_directory + "/*.csv", header=True)
     log_entry_df = log_entry_df.withColumn("Log file", SparkFunction.input_file_name())  # Add log file column
     log_entry_rdd = log_entry_df.rdd
+    day = day_dir[:8]
 
     def convert(log_entry_row):
         # Converts Row-object to (file_name, log_entry_dict)-tuple.
         log_entry_dict = log_entry_row.asDict()
         file_name = log_entry_dict["Stage file"] + "-" + log_entry_dict["URL index"]
 
+        log_entry_dict["Day"] = day
         log_entry_dict["Log index"] = int(log_entry_dict["Log file"].split("-")[-1].split(".")[0])
         log_entry_dict["Stage index"] = int(log_entry_dict["Stage file"].split("_s")[-1])
         log_entry_dict["URL index"] = int(log_entry_dict["URL index"])
@@ -107,7 +109,7 @@ def filter_out_invalid_pages(joined_rdd):
     def filter_invalid(joined_tuple):
         (_, log_entry) = joined_tuple
         page_html, page_text = log_entry["Page HTML"], log_entry["Page text"]
-        return page_html is not None and len(page_text) > 0
+        return page_html is not None and page_text is not None and len(page_text) > 0
 
     return joined_rdd.filter(filter_invalid)
 
@@ -129,23 +131,22 @@ def filter_out_false_duplicates(joined_rdd):
     return filtered_joined_rdd
 
 
-def crawl_to_raw_rdd(crawl_root, day_dir, extract_dir):
+def crawl_to_raw_rdd(crawl_root, day_dir):
     crawl_directory = crawl_root + "/" + day_dir
-    raw_rdd_path = extract_dir + "/raw_rdds/" + day_dir + ".pickle"
 
-    log_entry_rdd = get_log_entry_rdd(crawl_directory)
+    log_entry_rdd = get_log_entry_rdd(crawl_directory, day_dir)
     binary_file_rdd = get_binary_file_rdd(crawl_directory)
     raw_rdd = combine_log_entry_binary_file_rdds(log_entry_rdd, binary_file_rdd)
     raw_rdd = preserve_crawl_order(raw_rdd)
     raw_rdd = extract_text(raw_rdd)
     raw_rdd = filter_out_invalid_pages(raw_rdd)
     raw_rdd = filter_out_false_duplicates(raw_rdd)
-    # raw_rdd.saveAsPickleFile(raw_rdd_path)
+    print("reached the end (for now):", raw_rdd.first())
+    return raw_rdd
 
 
-def compute_raw_rdds(crawl_root, days, extract_dir):
-    for day in days:
-        crawl_to_raw_rdd(crawl_root, day, extract_dir)
+def compute_raw_rdds(crawl_root, days):
+    return [crawl_to_raw_rdd(crawl_root, day) for day in days]
 
 
 def extract_data_points(raw_rdd):
@@ -175,48 +176,30 @@ def raw_rdd_to_data_points(day_dir, extract_dir):
     data_point_rdd.saveAsPickleFile(data_point_path)
 
 
-def get_day_pairs(days, extract_dir):
-    day1_rdd, day2_rdd = None, None
-
-    for day1, day2 in zip(days, days[1:]):
-        rdd1_path = extract_dir + "/raw_rdds/" + day1 + ".pickle"
-        rdd2_path = extract_dir + "/raw_rdds/" + day2 + ".pickle"
-        day1_rdd = sc.pickleFile(rdd1_path) if day2_rdd is None else day2_rdd
-        day2_rdd = sc.pickleFile(rdd2_path)
-
-        pair_path = extract_dir + "/raw_pairs/" + day1[:8] + "-" + day2[:8] + ".pickle"
+def get_day_pairs( raw_rdds):
+    pair_rdds = []
+    for day1_rdd, day2_rdd in zip(raw_rdds, raw_rdds[1:]):
         pair_rdd = day1_rdd.join(day2_rdd)
-        pair_rdd.saveAsPickleFile(pair_path)
+        pair_rdds.append(pair_rdd)
+    return pair_rdds
 
 
-def combine_raw_pair_rdds(days, extract_dir):
+def combine_pair_rdds(pair_rdds):
     first_day, last_day, union_rdd = None, None, None
-    for day1, day2 in zip(days, days[1:]):
-        pair_path = extract_dir + "/raw_pairs/" + day1[:8] + "-" + day2[:8] + ".pickle"
-        new_pair_rdd = sc.pickleFile(pair_path)
-        # TODO: add day-pair (day1,day2) field to RDD entries
-
+    for pair_rdd1, pair_rdd2 in zip(pair_rdds, pair_rdds[1:]):
         if union_rdd is None:
-            union_rdd = new_pair_rdd
-            first_day = day1[:8]
+            union_rdd = pair_rdd1.union(pair_rdd2)
         else:
-            union_rdd = union_rdd.union(new_pair_rdd)
-        last_day = day2[:8]
-
-    union_path = extract_dir + "/raw_unions/" + first_day + "-" + last_day + ".pickle"
-    union_rdd.saveAsPickleFile(union_path)
+            union_rdd = union_rdd.union(pair_rdd2)
+    return union_rdd
 
 
 # crawl_dir = "/user/s1839047/crawls"
 # extract_dir = "/user/s1839047/extracted"
 # day_list = ["20210612000004", "20210613000001", "20210614000002"]
 
-# compute_raw_rdds(crawl_dir, day_list, extract_dir)
-# get_day_pairs(day_list, extract_dir)
-# combine_raw_pair_rdds(day_list, extract_dir)
-
-
 crawl_dir = "/user/s1839047/crawls_test"
-extract_dir = "/user/s1839047/extracted_test"
 day_list = ["testday"]
-compute_raw_rdds(crawl_dir, day_list, extract_dir)
+raw_rdd_list = compute_raw_rdds(crawl_dir, day_list)
+# pair_rdd_list = get_day_pairs(day_list)
+# union_rdd_full = combine_pair_rdds(pair_rdd_list)
