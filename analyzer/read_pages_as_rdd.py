@@ -93,8 +93,11 @@ def extract_text(joined_rdd):
 
         page_html = detect_html.get_html(log_entry["Binary data"])
         page_text = detect_html.get_page_text(page_html)[0] if page_html else None
-        log_entry["Page HTML"] = page_html
         log_entry["Page text"] = page_text
+        # If page_html is in log_entry and a join is done,
+        # this results in an "RuntimeError: maximum recursion depth exceeded" error.
+        # log_entry["Page HTML"] = page_html
+        del log_entry["Binary data"]  # Not necessary anymore
 
         return file_name, log_entry
 
@@ -108,8 +111,10 @@ def filter_out_invalid_pages(joined_rdd):
 
     def filter_invalid(joined_tuple):
         (_, log_entry) = joined_tuple
-        page_html, page_text = log_entry["Page HTML"], log_entry["Page text"]
-        return page_html is not None and page_text is not None and len(page_text) > 0
+        page_text = log_entry["Page text"]
+        status_code = log_entry["Status code"]
+        return page_text is not None and len(page_text) > 0 \
+            and status_code == "RequestStatus.HEADLESS_SUCCESS"
 
     return joined_rdd.filter(filter_invalid)
 
@@ -140,8 +145,7 @@ def crawl_to_raw_rdd(crawl_root, day_dir):
     raw_rdd = preserve_crawl_order(raw_rdd)
     raw_rdd = extract_text(raw_rdd)
     raw_rdd = filter_out_invalid_pages(raw_rdd)
-    # raw_rdd = filter_out_false_duplicates(raw_rdd)
-    print("reached the end (for now):", raw_rdd.first())
+    raw_rdd = filter_out_false_duplicates(raw_rdd)
     return raw_rdd
 
 
@@ -223,5 +227,5 @@ raw_rdd_list = compute_raw_rdds(crawl_dir, day_list)
 pair_rdd_list = get_day_pairs(raw_rdd_list)
 union_rdd_full = combine_pair_rdds(pair_rdd_list)
 change_rdd_full = compute_has_changed(union_rdd_full)
-print(change_rdd_full.take(10))
-save_change_rdd_as_csv(change_rdd_full, extract_dir)
+print(change_rdd_full.take(20))
+# save_change_rdd_as_csv(change_rdd_full, extract_dir)
