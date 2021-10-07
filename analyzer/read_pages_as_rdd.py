@@ -1,11 +1,11 @@
 """
 Read pages from HDFS as Resilient Distributed Dataset.
 Author: Daan Kooij
-Last modified: October 6th, 2021
+Last modified: October 7th, 2021
 """
 
-from pyspark import SparkContext
-from pyspark.sql import SparkSession
+from pyspark import SparkContext, Row
+from pyspark.sql import SparkSession, Window
 from pyspark.sql import functions as SparkFunction
 
 import detect_html
@@ -66,20 +66,22 @@ def combine_log_entry_binary_file_rdds(log_entry_rdd, binary_file_rdd):
 
 
 def preserve_crawl_order(joined_rdd):
-    # Sorts a RDD based on crawl order: first on crawler thread (log index),
-    # then on stage index, and finally on URL index.
+    # Adds an "Order index" field to RDD rows preserving the original crawl order:
+    # first order on crawler thread (log index), then on stage index, and finally on URL index.
     # These three fields to be sorted on are located in the log_entry dicts of each row.
     # The main purpose of this function is to be able to filter out invalid false duplicate pages,
     # by comparing whether consecutively crawled pages by the same thread have equal content.
 
-    def get_order_index(joined_tuple):
-        # Converts (file_name, log_entry)-tuple to sortable integer.
+    def add_order_index(joined_tuple):
+        # Converts (file_name, log_entry)-tuple to sortable integer, which is then added to log_entry.
         # Assumes no more than 999.999 URLs crawled per stage, and no more than 1.000 stages.
-        (_, log_entry) = joined_tuple
+        (file_name, log_entry) = joined_tuple
         log_index, stage_index, url_index = log_entry["Log index"], log_entry["Stage index"], log_entry["URL index"]
-        return log_index * 1000000000 + stage_index * 1000000 + url_index
+        order_index = log_index * 1000000000 + stage_index * 1000000 + url_index
+        log_entry["Order index"] = order_index
+        return file_name, log_entry
 
-    return joined_rdd.sortBy(get_order_index)
+    return joined_rdd.map(add_order_index)
 
 
 def extract_text(joined_rdd):
@@ -111,7 +113,20 @@ def filter_out_invalid_pages(joined_rdd):
 
 
 def filter_out_false_duplicates(joined_rdd):
-    pass
+    df = joined_rdd.map(lambda t: Row(file_name=t[0], page_text=t[1]["Page text"],
+                                      partition=1, order_index=t[1]["Order index"])).toDF()
+    rdd = df.withColumn("prev_page_text", SparkFunction.lag(df["page_text"])
+                        .over(Window.partitionBy("partition").orderBy("order_index"))).rdd
+
+    def is_valid(row):
+        # Verifies for a row (representing a crawled page) whether the page is valid.
+        page_text, prev_page_text = row["page_text"], row["prev_page_text"]
+        return page_text != prev_page_text
+
+    valid_check_rdd = rdd.filter(is_valid).map(lambda row: (row["file_name"], None))
+    filtered_joined_rdd = joined_rdd.join(valid_check_rdd).map(lambda t: (t[0], t[1][0]))
+
+    return filtered_joined_rdd
 
 
 def crawl_to_raw_rdd(crawl_root, day_dir, extract_dir):
@@ -124,9 +139,8 @@ def crawl_to_raw_rdd(crawl_root, day_dir, extract_dir):
     raw_rdd = preserve_crawl_order(raw_rdd)
     raw_rdd = extract_text(raw_rdd)
     raw_rdd = filter_out_invalid_pages(raw_rdd)
-    # print(raw_rdd.take(5))
-    # # TODO: remove false duplicate pages (lag function, see if consecutive pages by same thread overlap)
-    raw_rdd.saveAsPickleFile(raw_rdd_path)
+    raw_rdd = filter_out_false_duplicates(raw_rdd)
+    # raw_rdd.saveAsPickleFile(raw_rdd_path)
 
 
 def compute_raw_rdds(crawl_root, days, extract_dir):
