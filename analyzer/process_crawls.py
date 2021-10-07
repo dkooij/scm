@@ -1,5 +1,5 @@
 """
-Read pages from HDFS as Resilient Distributed Dataset.
+Read and process pages from the HDFS as a Resilient Distributed Dataset.
 Author: Daan Kooij
 Last modified: October 7th, 2021
 """
@@ -216,16 +216,18 @@ def save_change_rdd_as_csv(change_rdd, output_directory):
     change_rdd.map(to_csv_line).saveAsTextFile(output_path)
 
 
-# crawl_dir = "/user/s1839047/crawls"
-# extract_dir = "/user/s1839047/extracted"
-# day_list = ["20210612000004", "20210613000001", "20210614000002"]
-
-crawl_dir = "/user/s1839047/crawls_test"
-day_list = ["testday", "testday2"]
+crawl_dir = "/user/s1839047/crawls"
 extract_dir = "/user/s1839047/extracted"
+day_list = ["20210612000004", "20210613000001", "20210614000002",
+            "20210615000002", "20210616000003", "20210617000002",
+            "20210618000003", "20210619000003", "20210620000004"]
+
+# crawl_dir = "/user/s1839047/crawls_test"
+# day_list = ["testday", "testday2"]
+# extract_dir = "/user/s1839047/extracted"
+
 raw_rdd_list = compute_raw_rdds(crawl_dir, day_list)
 pair_rdd_list = get_day_pairs(raw_rdd_list)
 union_rdd_full = combine_pair_rdds(pair_rdd_list)
 change_rdd_full = compute_has_changed(union_rdd_full)
-print(change_rdd_full.take(20))
-# save_change_rdd_as_csv(change_rdd_full, extract_dir)
+save_change_rdd_as_csv(change_rdd_full, extract_dir)
