@@ -4,6 +4,7 @@ Author: Daan Kooij
 Last modified: October 7th, 2021
 """
 
+from datetime import datetime
 from pyspark import SparkContext, Row
 from pyspark.sql import SparkSession, Window
 from pyspark.sql import functions as SparkFunction
@@ -207,7 +208,8 @@ def compute_has_changed(union_rdd):
 
 
 def save_change_rdd_as_csv(change_rdd, output_directory):
-    output_path = output_directory + "/change.csv"
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    output_path = output_directory + "/change-" + timestamp
 
     def to_csv_line(rdd_entry):
         file_name, (day1, day2, has_changed) = rdd_entry
@@ -223,7 +225,7 @@ day_list = ["20210612000004", "20210613000001", "20210614000002",
             "20210618000003", "20210619000003", "20210620000004"]
 
 # crawl_dir = "/user/s1839047/crawls_test"
-# day_list = ["testday", "testday2"]
+# day_list = ["miniday", "miniday2"]
 # extract_dir = "/user/s1839047/extracted"
 
 raw_rdd_list = compute_raw_rdds(crawl_dir, day_list)
