@@ -46,7 +46,6 @@ def get_log_entry_rdd(crawl_directory, day_dir):
 
 def get_binary_file_rdd(crawl_directory):
     binary_file_rdd = sc.binaryFiles(crawl_directory + "/pages")
-    binary_file_rdd = binary_file_rdd.repartition(PARTITIONS)
 
     def convert(binary_tuple):
         # Converts (file_path, binary_data)-tuple to (file_name, binary_data)-tuple.
@@ -119,7 +118,6 @@ def filter_out_false_duplicates(joined_rdd):
                                       partition=1, order_index=t[1]["Order index"])).toDF()
     rdd = df.withColumn("prev_page_text", SparkFunction.lag(df["page_text"])
                         .over(Window.partitionBy("partition").orderBy("order_index"))).rdd
-    rdd = rdd.repartition(PARTITIONS)
 
     def is_valid(row):
         # Verifies for a row (representing a crawled page) whether the page is valid.
@@ -196,7 +194,6 @@ def compute_has_changed(pair_rdds):
 
     change_rdds = []
     for pair_rdd in pair_rdds:
-        pair_rdd = pair_rdd.repartition(PARTITIONS)
         change_rdds.append(pair_rdd.map(map_tuple))
     return change_rdds
 
@@ -221,10 +218,9 @@ def save_change_rdd_as_csv(change_rdd, output_directory):
 
 crawl_dir = "/user/s1839047/crawls"
 extract_dir = "/user/s1839047/extracted"
-day_list = ["20210612000004", "20210613000001"]
-# day_list = ["20210612000004", "20210613000001", "20210614000002",
-#             "20210615000002", "20210616000003", "20210617000002",
-#             "20210618000003", "20210619000003", "20210620000004"]
+day_list = ["20210612000004", "20210613000001", "20210614000002",
+            "20210615000002", "20210616000003", "20210617000002",
+            "20210618000003", "20210619000003", "20210620000004"]
 
 # crawl_dir = "/user/s1839047/crawls_test"
 # day_list = ["miniday", "miniday2"]
