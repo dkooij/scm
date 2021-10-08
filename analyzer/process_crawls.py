@@ -1,7 +1,7 @@
 """
 Read and process pages from the HDFS as a Resilient Distributed Dataset.
 Author: Daan Kooij
-Last modified: October 7th, 2021
+Last modified: October 8th, 2021
 """
 
 from datetime import datetime
@@ -189,14 +189,7 @@ def get_day_pairs(raw_rdds):
     return pair_rdds
 
 
-def combine_pair_rdds(pair_rdds):
-    union_rdd = pair_rdds[0]
-    for next_pair_rdd in pair_rdds[1:]:
-        union_rdd = union_rdd.union(next_pair_rdd)
-    return union_rdd
-
-
-def compute_has_changed(union_rdd):
+def compute_has_changed(pair_rdds):
     def map_tuple(tuple_pair):
         file_name, (log_entry1, log_entry2) = tuple_pair
         day1, day2 = log_entry1["Day"], log_entry2["Day"]
@@ -204,7 +197,14 @@ def compute_has_changed(union_rdd):
         has_changed = page_text1 != page_text2
         return file_name, (day1, day2, has_changed)
 
-    return union_rdd.map(map_tuple)
+    return [pair_rdd.map(map_tuple) for pair_rdd in pair_rdds]
+
+
+def combine_rdds(rdds):
+    union_rdd = rdds[0]
+    for next_rdd in rdds[1:]:
+        union_rdd = union_rdd.union(next_rdd)
+    return union_rdd
 
 
 def save_change_rdd_as_csv(change_rdd, output_directory):
@@ -230,6 +230,6 @@ day_list = ["20210612000004", "20210613000001", "20210614000002",
 
 raw_rdd_list = compute_raw_rdds(crawl_dir, day_list)
 pair_rdd_list = get_day_pairs(raw_rdd_list)
-union_rdd_full = combine_pair_rdds(pair_rdd_list)
-change_rdd_full = compute_has_changed(union_rdd_full)
-save_change_rdd_as_csv(change_rdd_full, extract_dir)
+change_rdd_list = compute_has_changed(pair_rdd_list)
+union_rdd_full = combine_rdds(change_rdd_list)
+save_change_rdd_as_csv(union_rdd_full, extract_dir)
