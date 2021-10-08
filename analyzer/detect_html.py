@@ -1,7 +1,7 @@
 """
 HTML Detector.
 Author: Daan Kooij
-Last modified: September 15th, 2021
+Last modified: October 8th, 2021
 """
 
 from bs4 import BeautifulSoup
@@ -9,9 +9,14 @@ from bs4 import BeautifulSoup
 
 def get_html(file):
     # Requires file in binary-reading mode
-    page_html = BeautifulSoup(file, "html.parser")
-    if page_html.find("html"):
-        return page_html
+    try:
+        page_html = BeautifulSoup(file, "html.parser")
+        if page_html.find("html"):
+            return page_html
+        else:
+            page_html.decompose()
+    except TypeError:
+        print("BS4: Error while parsing crawled page")
     return False
 
 
