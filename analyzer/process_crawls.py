@@ -4,10 +4,10 @@ Author: Daan Kooij
 Last modified: October 8th, 2021
 """
 
-from datetime import datetime
 from pyspark import SparkContext, Row
 from pyspark.sql import SparkSession, Window
 from pyspark.sql import functions as SparkFunction
+import sys
 
 from get_page_text import get_page_text
 
@@ -205,9 +205,8 @@ def combine_rdds(rdds):
     return union_rdd
 
 
-def save_change_rdd_as_csv(change_rdd, output_directory):
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    output_path = output_directory + "/change-" + timestamp
+def save_change_rdd_as_csv(change_rdd, output_directory, output_name):
+    output_path = output_directory + "/change-" + output_name
 
     def to_csv_line(rdd_entry):
         file_name, (day1, day2, has_changed) = rdd_entry
@@ -216,18 +215,24 @@ def save_change_rdd_as_csv(change_rdd, output_directory):
     change_rdd.map(to_csv_line).saveAsTextFile(output_path)
 
 
-crawl_dir = "/user/s1839047/crawls"
-extract_dir = "/user/s1839047/extracted"
-day_list = ["20210612000004", "20210613000001", "20210614000002",
-            "20210615000002", "20210616000003", "20210617000002",
-            "20210618000003", "20210619000003", "20210620000004"]
-
 # crawl_dir = "/user/s1839047/crawls_test"
 # day_list = ["miniday", "miniday2"]
 # extract_dir = "/user/s1839047/extracted_test"
 
-raw_rdd_list = compute_raw_rdds(crawl_dir, day_list)
-pair_rdd_list = get_day_pairs(raw_rdd_list)
-change_rdd_list = compute_has_changed(pair_rdd_list)
-union_rdd_full = combine_rdds(change_rdd_list)
-save_change_rdd_as_csv(union_rdd_full, extract_dir)
+
+crawl_dir = "/user/s1839047/crawls"
+extract_dir = "/user/s1839047/extracted"
+
+
+def process(day1_dir, day2_dir):
+    raw_rdd_list = compute_raw_rdds(crawl_dir, [day1_dir, day2_dir])
+    pair_rdd_list = get_day_pairs(raw_rdd_list)
+    change_rdd_list = compute_has_changed(pair_rdd_list)
+    save_change_rdd_as_csv(change_rdd_list[0], extract_dir, day2_dir)
+
+
+if len(sys.argv) >= 3:
+    dir1, dir2 = sys.argv[1], sys.argv[2]
+    process(dir1, dir2)
+else:
+    print("Invalid usage")
