@@ -141,7 +141,7 @@ def crawl_to_raw_rdd(crawl_root, day_dir):
     joined_rdd = combine_log_entry_page_text_rdds(log_entry_rdd, page_text_rdd)
     joined_rdd = preserve_crawl_order(joined_rdd)
     joined_rdd = filter_out_invalid_pages(joined_rdd)
-    # joined_rdd = filter_out_false_duplicates(joined_rdd)
+    joined_rdd = filter_out_false_duplicates(joined_rdd)
     return joined_rdd
 
 
