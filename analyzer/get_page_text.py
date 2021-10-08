@@ -9,6 +9,7 @@ from html2text import html2text
 
 def get_page_text(binary_data):
     try:
-        return html2text(binary_data.read())
+        page_data_str = str(binary_data)
+        return html2text(page_data_str)
     except UnicodeDecodeError:
         return ""
