@@ -9,8 +9,7 @@ from pyspark import SparkContext, Row
 from pyspark.sql import SparkSession, Window
 from pyspark.sql import functions as SparkFunction
 
-import detect_html
-import extractor
+from get_page_text import get_page_text
 
 
 PARTITIONS = 1000
@@ -62,10 +61,7 @@ def extract_text(binary_file_rdd):
     def extract(binary_tuple):
         # Extracts page HTML and page text from binary data.
         (file_name, binary_data) = binary_tuple
-
-        page_html = detect_html.get_html(binary_data)
-        page_text = detect_html.get_page_text(page_html)[0] if page_html else None
-
+        page_text = get_page_text(binary_data)
         return file_name, page_text
 
     return binary_file_rdd.map(extract)
@@ -113,8 +109,7 @@ def filter_out_invalid_pages(joined_rdd):
         (_, log_entry) = joined_tuple
         page_text = log_entry["Page text"]
         status_code = log_entry["Status code"]
-        return page_text is not None and len(page_text) > 0 \
-            and status_code == "RequestStatus.HEADLESS_SUCCESS"
+        return len(page_text) > 0 and status_code == "RequestStatus.HEADLESS_SUCCESS"
 
     return joined_rdd.filter(filter_invalid)
 
@@ -146,7 +141,7 @@ def crawl_to_raw_rdd(crawl_root, day_dir):
     joined_rdd = combine_log_entry_page_text_rdds(log_entry_rdd, page_text_rdd)
     joined_rdd = preserve_crawl_order(joined_rdd)
     joined_rdd = filter_out_invalid_pages(joined_rdd)
-    joined_rdd = filter_out_false_duplicates(joined_rdd)
+    # joined_rdd = filter_out_false_duplicates(joined_rdd)
     return joined_rdd
 
 
@@ -154,6 +149,7 @@ def compute_raw_rdds(crawl_root, days):
     return [crawl_to_raw_rdd(crawl_root, day) for day in days]
 
 
+"""
 def extract_data_points(raw_rdd):
     def extract_data_point(log_entry_tuple):
         # Converts (file_name, log_entry)-tuple to (file_name, data_point)-tuple.
@@ -179,6 +175,7 @@ def raw_rdd_to_data_points(day_dir, extract_dir):
     raw_rdd = sc.pickleFile(raw_rdd_path)
     data_point_rdd = extract_data_points(raw_rdd)
     data_point_rdd.saveAsPickleFile(data_point_path)
+"""
 
 
 def get_day_pairs(raw_rdds):
