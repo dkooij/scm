@@ -13,6 +13,8 @@ import detect_html
 import extractor
 
 
+PARTITIONS = 1000
+
 # Initialize Spark and SparkSQL context.
 sc = SparkContext(appName="SCM-PROCESS-CRAWLS-S1839047")
 sc.setLogLevel("ERROR")
@@ -45,6 +47,7 @@ def get_log_entry_rdd(crawl_directory, day_dir):
 
 def get_binary_file_rdd(crawl_directory):
     binary_file_rdd = sc.binaryFiles(crawl_directory + "/pages")
+    binary_file_rdd = binary_file_rdd.repartition(PARTITIONS)
 
     def convert(binary_tuple):
         # Converts (file_path, binary_data)-tuple to (file_name, binary_data)-tuple.
@@ -55,14 +58,27 @@ def get_binary_file_rdd(crawl_directory):
     return binary_file_rdd.map(convert)
 
 
-def combine_log_entry_binary_file_rdds(log_entry_rdd, binary_file_rdd):
-    joined_rdd = log_entry_rdd.join(binary_file_rdd)
+def extract_text(binary_file_rdd):
+    def extract(binary_tuple):
+        # Extracts page HTML and page text from binary data.
+        (file_name, binary_data) = binary_tuple
+
+        page_html = detect_html.get_html(binary_data)
+        page_text = detect_html.get_page_text(page_html)[0] if page_html else None
+
+        return file_name, page_text
+
+    return binary_file_rdd.map(extract)
+
+
+def combine_log_entry_page_text_rdds(log_entry_rdd, page_text_rdd):
+    joined_rdd = log_entry_rdd.join(page_text_rdd)
 
     def fix_joined_tuple(joined_tuple):
         # Transforms (file_name, (log_entry, binary_data))-tuple to (file_name, log_entry)-tuple,
         # where log_entry has an additional dictionary entry for binary_data.
-        (file_name, (log_entry, binary_data)) = joined_tuple
-        log_entry["Binary data"] = binary_data
+        (file_name, (log_entry, page_text)) = joined_tuple
+        log_entry["Page text"] = page_text
         return file_name, log_entry
 
     return joined_rdd.map(fix_joined_tuple)
@@ -87,27 +103,10 @@ def preserve_crawl_order(joined_rdd):
     return joined_rdd.map(add_order_index)
 
 
-def extract_text(joined_rdd):
-    def extract(joined_tuple):
-        # Extracts page HTML and page text from binary data.
-        (file_name, log_entry) = joined_tuple
-
-        page_html = detect_html.get_html(log_entry["Binary data"])
-        page_text = detect_html.get_page_text(page_html)[0] if page_html else None
-        log_entry["Page text"] = page_text
-        # If page_html is in log_entry and a join is done,
-        # this results in an "RuntimeError: maximum recursion depth exceeded" error.
-        # log_entry["Page HTML"] = page_html
-        del log_entry["Binary data"]  # Not necessary anymore
-
-        return file_name, log_entry
-
-    return joined_rdd.map(extract)
-
-
 def filter_out_invalid_pages(joined_rdd):
     # Filters out both pages for which the HTML is invalid (i.e., cannot be parsed),
-    # and pages that contain no main content (that have no text).
+    # pages that contain no main content (that have no text),
+    # and pages that have another status code than HEADLESS_SUCCESS.
     # Note: unsure whether disregarding pages with no text is the right thing to do.
 
     def filter_invalid(joined_tuple):
@@ -125,6 +124,7 @@ def filter_out_false_duplicates(joined_rdd):
                                       partition=1, order_index=t[1]["Order index"])).toDF()
     rdd = df.withColumn("prev_page_text", SparkFunction.lag(df["page_text"])
                         .over(Window.partitionBy("partition").orderBy("order_index"))).rdd
+    rdd = rdd.repartition(PARTITIONS)
 
     def is_valid(row):
         # Verifies for a row (representing a crawled page) whether the page is valid.
@@ -142,12 +142,12 @@ def crawl_to_raw_rdd(crawl_root, day_dir):
 
     log_entry_rdd = get_log_entry_rdd(crawl_directory, day_dir)
     binary_file_rdd = get_binary_file_rdd(crawl_directory)
-    raw_rdd = combine_log_entry_binary_file_rdds(log_entry_rdd, binary_file_rdd)
-    raw_rdd = preserve_crawl_order(raw_rdd)
-    raw_rdd = extract_text(raw_rdd)
-    raw_rdd = filter_out_invalid_pages(raw_rdd)
-    raw_rdd = filter_out_false_duplicates(raw_rdd)
-    return raw_rdd
+    page_text_rdd = extract_text(binary_file_rdd)
+    joined_rdd = combine_log_entry_page_text_rdds(log_entry_rdd, page_text_rdd)
+    joined_rdd = preserve_crawl_order(joined_rdd)
+    joined_rdd = filter_out_invalid_pages(joined_rdd)
+    joined_rdd = filter_out_false_duplicates(joined_rdd)
+    return joined_rdd
 
 
 def compute_raw_rdds(crawl_root, days):
@@ -197,7 +197,11 @@ def compute_has_changed(pair_rdds):
         has_changed = page_text1 != page_text2
         return file_name, (day1, day2, has_changed)
 
-    return [pair_rdd.map(map_tuple) for pair_rdd in pair_rdds]
+    change_rdds = []
+    for pair_rdd in pair_rdds:
+        pair_rdd = pair_rdd.repartition(PARTITIONS)
+        change_rdds.append(pair_rdd.map(map_tuple))
+    return change_rdds
 
 
 def combine_rdds(rdds):
@@ -220,13 +224,14 @@ def save_change_rdd_as_csv(change_rdd, output_directory):
 
 crawl_dir = "/user/s1839047/crawls"
 extract_dir = "/user/s1839047/extracted"
-day_list = ["20210612000004", "20210613000001", "20210614000002",
-            "20210615000002", "20210616000003", "20210617000002",
-            "20210618000003", "20210619000003", "20210620000004"]
+day_list = ["20210612000004", "20210613000001"]
+# day_list = ["20210612000004", "20210613000001", "20210614000002",
+#             "20210615000002", "20210616000003", "20210617000002",
+#             "20210618000003", "20210619000003", "20210620000004"]
 
 # crawl_dir = "/user/s1839047/crawls_test"
 # day_list = ["miniday", "miniday2"]
-# extract_dir = "/user/s1839047/extracted"
+# extract_dir = "/user/s1839047/extracted_test"
 
 raw_rdd_list = compute_raw_rdds(crawl_dir, day_list)
 pair_rdd_list = get_day_pairs(raw_rdd_list)
