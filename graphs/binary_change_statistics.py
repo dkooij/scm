@@ -79,20 +79,23 @@ def draw_alluvial_plot(change_cube):
             node_labels.append(str(i))
             node_colors.append(get_color(i))
 
-    fig = go.Figure(data=[go.Sankey(
-        node=dict(
-            pad=15,
-            thickness=20,
-            line=dict(color="black", width=0.5),
-            color=node_colors,
-            label=node_labels
-        ),
-        link=dict(
-            source=sources,  # indices correspond to node_labels, eg A1, A2, A1, B1, ...
-            target=targets,
-            value=values,
-            color=link_colors
-        ))])
+    fig = go.Figure(
+        data=[go.Sankey(
+            arrangement="snap",
+            node=dict(
+                pad=15,
+                thickness=20,
+                line=dict(color="black", width=0.5),
+                color=node_colors,
+                label=node_labels
+            ),
+            link=dict(
+                source=sources,  # indices correspond to node_labels, eg A1, A2, A1, B1, ...
+                target=targets,
+                value=values,
+                color=link_colors
+            )
+        )])
 
     fig.update_layout(title_text="Alluvial Plot depicting the number of days "
                                  "that pages in the Dutch Web change per week, in weeks 24-35 of 2021.")
