@@ -1,7 +1,7 @@
 """
 Read and process pages from the HDFS as a Resilient Distributed Dataset.
 Author: Daan Kooij
-Last modified: October 8th, 2021
+Last modified: October 27th, 2021
 """
 
 from pyspark import SparkContext, Row
@@ -11,8 +11,6 @@ import sys
 
 from get_page_text import get_page_text
 
-
-PARTITIONS = 1000
 
 # Initialize Spark and SparkSQL context.
 sc = SparkContext(appName="SCM-PROCESS-CRAWLS-S1839047")
