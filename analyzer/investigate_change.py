@@ -31,28 +31,34 @@ def _extract_page_features_text(log_path, crawl_dir, text_output_filepath, featu
             features_output_writer = csv.writer(features_output_file)
             features_header = []
 
+            previous_page_text = None
             for log_entry in csv_reader.get_log_entries(log_path):
                 with open(csv_reader.get_filepath(log_entry, crawl_dir), "rb") as file:
                     page_text = get_page_text(file.read())
-                    file.seek(0)  # To allow reading the file again
-                    page_html = detect_html.get_html(file)
-                    if len(page_text) > 0 and page_html:
-                        # Write page text to CSV
-                        text_output_writer.writerow([log_entry["Stage file"], log_entry["URL index"],
-                                                     log_entry["URL"], page_text])
 
-                        # Retrieve and write static page features to CSV
-                        page_words = page_text.split()
-                        data_point = extractor.extract_static_features(log_entry, page_html,
-                                                                       input_dir=crawl_dir,
-                                                                       page_words=page_words)
-                        if len(features_header) == 0:
-                            features_header = ["Stage file", "URL index", "URL"] + \
-                                              sorted(list(data_point.features.keys()))
-                            features_output_writer.writerow(features_header)
-                        feature_values = [v for k, v in sorted(list(data_point.features.items()))]
-                        features_output_writer.writerow([log_entry["Stage file"], log_entry["URL index"],
-                                                         log_entry["URL"]] + feature_values)
+                    if len(page_text) > 0 and page_text != previous_page_text:
+                        file.seek(0)  # To allow reading the file again
+                        page_html = detect_html.get_html(file)
+
+                        if page_html:
+                            # Write page text to CSV
+                            text_output_writer.writerow([log_entry["Stage file"], log_entry["URL index"],
+                                                         log_entry["URL"], page_text])
+
+                            # Retrieve and write static page features to CSV
+                            page_words = page_text.split()
+                            data_point = extractor.extract_static_features(log_entry, page_html,
+                                                                           input_dir=crawl_dir,
+                                                                           page_words=page_words)
+                            if len(features_header) == 0:
+                                features_header = ["Stage file", "URL index", "URL"] + \
+                                                  sorted(list(data_point.features.keys()))
+                                features_output_writer.writerow(features_header)
+                            feature_values = [v for k, v in sorted(list(data_point.features.items()))]
+                            features_output_writer.writerow([log_entry["Stage file"], log_entry["URL index"],
+                                                             log_entry["URL"]] + feature_values)
+
+                    previous_page_text = page_text
 
 
 def extract_page_features_text(crawls_root, input_dir, output_dir):
