@@ -34,7 +34,7 @@ def _extract_page_features_text(log_path, crawl_dir, text_output_filepath, featu
             for log_entry in csv_reader.get_log_entries(log_path):
                 with open(csv_reader.get_filepath(log_entry, crawl_dir), "rb") as file:
                     page_text = get_page_text(file.read())
-                    file.seek(0)
+                    file.seek(0)  # To allow reading the file again
                     page_html = detect_html.get_html(file)
                     if len(page_text) > 0 and page_html:
                         # Write page text to CSV
@@ -94,6 +94,37 @@ def extract_semantic_vectors(target, batch_index=0, start_index=0):
 """
 
 
+def combine_csv_files(input_dir, output_dir):
+    """
+    Combine collections of feature and text .csv files into
+    respectively one combined feature file and one combined text file.
+    """
+    feature_path = output_dir + "/" + input_dir + "/features"
+    text_path = output_dir + "/" + input_dir + "/text"
+
+    feature_entries = []
+    text_entries = []
+    for entry in csv_reader.get_all_log_entries(feature_path, ignore_validity_check=True):
+        feature_entries.append(entry)
+    for entry in csv_reader.get_all_log_entries(text_path, ignore_validity_check=True):
+        text_entries.append(entry)
+    feature_entries.sort(key=lambda e: (e["Stage file"], int(e["URL index"])))
+    text_entries.sort(key=lambda e: (e["Stage file"], int(e["URL index"])))
+
+    feature_output = output_dir + "/" + input_dir + "/features.csv"
+    text_output = output_dir + "/" + input_dir + "/text.csv"
+    common_fields = ["Stage file", "URL index", "URL"]
+    csv_reader.write_csv_file(feature_output, feature_entries, common_fields)
+    csv_reader.write_csv_file(text_output, text_entries, common_fields)
+
+
+# def compute_text_change(input_dir, output_dir, target_fields):
+#     feature_path1 = output_dir + "/" + input1_dir + "/features.csv"
+#     feature_path2 = output_dir + "/" + input2_dir + "/features.csv"
+#     text_path1 = output_dir + "/" + input1_dir + "/text.csv"
+#     text_path2 = output_dir + "/" + input2_dir + "/text.csv"
+
+
 def run():
     # crawls_root = "C:/Users/daank/Drawer/SCM archives/Full crawls"
     # target_list = ["20210612", "20210613"]
@@ -103,7 +134,8 @@ def run():
 
     # Iterate over the crawls of all days in target_list
     for input_dir in target_list:
-        extract_page_features_text(crawls_root, input_dir, output_dir)
+        # extract_page_features_text(crawls_root, input_dir, output_dir)
+        combine_csv_files(input_dir, output_dir)
 
 
 if __name__ == "__main__":
