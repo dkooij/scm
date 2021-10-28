@@ -109,11 +109,43 @@ def combine_csv_files(input_dir, output_dir, name):
     csv_reader.write_csv_file(entry_output_path, entries)
 
 
-# def compute_text_change(input_dir, output_dir, target_fields):
-#     feature_path1 = output_dir + "/" + input1_dir + "/features.csv"
-#     feature_path2 = output_dir + "/" + input2_dir + "/features.csv"
-#     text_path1 = output_dir + "/" + input1_dir + "/text.csv"
-#     text_path2 = output_dir + "/" + input2_dir + "/text.csv"
+def compute_change(input1_dir, input2_dir, output_dir, name, target_fields):
+    entry_path1 = output_dir + "/" + input1_dir + "/" + name + ".csv"
+    entry_path2 = output_dir + "/" + input2_dir + "/" + name + ".csv"
+    gen1 = csv_reader.get_log_entries(entry_path1, ignore_validity_check=True)
+    gen2 = csv_reader.get_log_entries(entry_path2, ignore_validity_check=True)
+
+    differences = []
+
+    try:
+        entry1, entry2 = next(gen1), next(gen2)
+        while True:
+            stage1, stage2 = int(entry1["Stage file"][-2:]), int(entry2["Stage file"][-2:])
+            index1, index2 = int(entry1["URL index"]), int(entry2["URL index"])
+            if stage1 == stage2:
+                if index1 == index2:
+
+                    result = dict()
+                    for target_field in target_fields:
+                        result[target_field] = entry1[target_field] != entry2[target_field]
+                        result["Stage file"] = entry1["Stage file"]
+                        result["URL index"] = entry1["URL index"]
+                        result["URL"] = entry1["URL"]
+                    differences.append(result)
+
+                if index1 <= index2:
+                    entry1 = next(gen1)
+                if index1 >= index2:
+                    entry2 = next(gen2)
+            elif stage1 < stage2:
+                entry1 = next(gen1)
+            elif stage1 > stage2:
+                entry2 = next(gen2)
+    except StopIteration:
+        pass  # Done! Reached the end of one CSV file.
+
+    output_path = "output/" + name + "-difference.csv"
+    csv_reader.write_csv_file(output_path, differences)
 
 
 def run():
@@ -125,9 +157,13 @@ def run():
 
     # Iterate over the crawls of all days in target_list
     for input_dir in target_list:
-        # extract_page_features_text(crawls_root, input_dir, output_dir)
+        extract_page_features_text(crawls_root, input_dir, output_dir)
         combine_csv_files(input_dir, output_dir, "features")
         combine_csv_files(input_dir, output_dir, "text")
+    compute_change(target_list[0], target_list[1], output_dir, "features",
+                   ["words_total", "words_unique", "scripts", "external_outlinks", "internal_outlinks",
+                    "email_links", "images", "size", "meta", "tables", "tags_total", "tags_unique"])
+    compute_change(target_list[0], target_list[1], output_dir, "text", ["Page text"])
 
 
 if __name__ == "__main__":
