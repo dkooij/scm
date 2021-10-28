@@ -94,28 +94,19 @@ def extract_semantic_vectors(target, batch_index=0, start_index=0):
 """
 
 
-def combine_csv_files(input_dir, output_dir):
+def combine_csv_files(input_dir, output_dir, name):
     """
     Combine collections of feature and text .csv files into
     respectively one combined feature file and one combined text file.
     """
-    feature_path = output_dir + "/" + input_dir + "/features"
-    text_path = output_dir + "/" + input_dir + "/text"
+    entry_path = output_dir + "/" + input_dir + "/" + name
 
-    feature_entries = []
-    text_entries = []
-    for entry in csv_reader.get_all_log_entries(feature_path, ignore_validity_check=True):
-        feature_entries.append(entry)
-    for entry in csv_reader.get_all_log_entries(text_path, ignore_validity_check=True):
-        text_entries.append(entry)
-    feature_entries.sort(key=lambda e: (e["Stage file"], int(e["URL index"])))
-    text_entries.sort(key=lambda e: (e["Stage file"], int(e["URL index"])))
-
-    feature_output = output_dir + "/" + input_dir + "/features.csv"
-    text_output = output_dir + "/" + input_dir + "/text.csv"
-    common_fields = ["Stage file", "URL index", "URL"]
-    csv_reader.write_csv_file(feature_output, feature_entries, common_fields)
-    csv_reader.write_csv_file(text_output, text_entries, common_fields)
+    entries = []
+    for entry in csv_reader.get_all_log_entries(entry_path, ignore_validity_check=True):
+        entries.append(entry)
+    entries.sort(key=lambda e: (e["Stage file"], int(e["URL index"])))
+    entry_output_path = output_dir + "/" + input_dir + "/" + name + ".csv"
+    csv_reader.write_csv_file(entry_output_path, entries)
 
 
 # def compute_text_change(input_dir, output_dir, target_fields):
@@ -135,7 +126,8 @@ def run():
     # Iterate over the crawls of all days in target_list
     for input_dir in target_list:
         # extract_page_features_text(crawls_root, input_dir, output_dir)
-        combine_csv_files(input_dir, output_dir)
+        combine_csv_files(input_dir, output_dir, "features")
+        combine_csv_files(input_dir, output_dir, "text")
 
 
 if __name__ == "__main__":
