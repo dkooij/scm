@@ -1,7 +1,7 @@
 """
 Read and process pages from the HDFS as a Resilient Distributed Dataset.
 Author: Daan Kooij
-Last modified: October 27th, 2021
+Last modified: October 28th, 2021
 """
 
 from pyspark import SparkContext, Row
