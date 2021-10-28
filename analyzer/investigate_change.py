@@ -25,7 +25,7 @@ def _extract_page_features_text(log_path, crawl_dir, text_output_filepath, featu
     # Extracts both static simple page features and page text
     with open(text_output_filepath, "w", newline="", encoding="utf-8") as text_output_file:
         text_output_writer = csv.writer(text_output_file)
-        text_output_writer.writerow(["Stage file", "URL index", "URL", "Page text"])
+        text_output_writer.writerow(["Stage file", "URL index", "Page text"])
 
         with open(features_output_filepath, "w", newline="", encoding="utf-8") as features_output_file:
             features_output_writer = csv.writer(features_output_file)
@@ -42,8 +42,7 @@ def _extract_page_features_text(log_path, crawl_dir, text_output_filepath, featu
 
                         if page_html:
                             # Write page text to CSV
-                            text_output_writer.writerow([log_entry["Stage file"], log_entry["URL index"],
-                                                         log_entry["URL"], page_text])
+                            text_output_writer.writerow([log_entry["Stage file"], log_entry["URL index"], page_text])
 
                             # Retrieve and write static page features to CSV
                             page_words = page_text.split()
@@ -51,12 +50,12 @@ def _extract_page_features_text(log_path, crawl_dir, text_output_filepath, featu
                                                                            input_dir=crawl_dir,
                                                                            page_words=page_words)
                             if len(features_header) == 0:
-                                features_header = ["Stage file", "URL index", "URL"] + \
+                                features_header = ["Stage file", "URL index"] + \
                                                   sorted(list(data_point.features.keys()))
                                 features_output_writer.writerow(features_header)
                             feature_values = [v for k, v in sorted(list(data_point.features.items()))]
-                            features_output_writer.writerow([log_entry["Stage file"], log_entry["URL index"],
-                                                             log_entry["URL"]] + feature_values)
+                            features_output_writer.writerow([log_entry["Stage file"], log_entry["URL index"]]
+                                                            + feature_values)
 
                     previous_page_text = page_text
 
@@ -131,12 +130,9 @@ def compute_change(input1_dir, input2_dir, output_dir, name, target_fields):
             if stage1 == stage2:
                 if index1 == index2:
 
-                    result = dict()
+                    result = {"Stage file": entry1["Stage file"], "URL index": entry1["URL index"]}
                     for target_field in target_fields:
-                        result[target_field] = entry1[target_field] != entry2[target_field]
-                        result["Stage file"] = entry1["Stage file"]
-                        result["URL index"] = entry1["URL index"]
-                        result["URL"] = entry1["URL"]
+                        result[target_field] = "0" if entry1[target_field] == entry2[target_field] else "1"
                     differences.append(result)
 
                 if index1 <= index2:
