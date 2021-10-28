@@ -68,7 +68,7 @@ def should_use_page(log_entry):
 
 def write_csv_file(output_path, log_entries, field_order=None):
     if field_order is None:
-        field_order = ["Stage file", "URL index", "URL"]
+        field_order = ["Stage file", "URL index"]
     if len(log_entries) == 0:
         print("Error: requires log_entries to not be empty")
 
