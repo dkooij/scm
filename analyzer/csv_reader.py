@@ -2,7 +2,7 @@
 CSV Reader Generator.
 Make CSV rows indexable by CSV header keys.
 Author: Daan Kooij
-Last modified: September 13th, 2021
+Last modified: October 28th, 2021
 """
 
 import csv
@@ -62,3 +62,19 @@ def get_filepath(log_entry, input_dir):
 def should_use_page(log_entry):
     return log_entry["File present"] == "True" and \
            log_entry["Status code"] == "RequestStatus.HEADLESS_SUCCESS"
+
+
+# Write CSV files
+
+def write_csv_file(output_path, log_entries, field_order=None):
+    if field_order is None:
+        field_order = []
+    if len(log_entries) == 0:
+        print("Error: requires log_entries to not be empty")
+
+    with open(output_path, "w", newline="") as output_file:
+        output_writer = csv.writer(output_file)
+        field_list = field_order + sorted(list(set(log_entries[0].keys()) - set(field_order)))
+        output_writer.writerow(field_list)
+        for entry in log_entries:
+            output_writer.writerow([entry[k] for k in field_list])
