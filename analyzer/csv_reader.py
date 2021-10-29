@@ -2,7 +2,7 @@
 CSV Reader Generator.
 Make CSV rows indexable by CSV header keys.
 Author: Daan Kooij
-Last modified: October 28th, 2021
+Last modified: October 29th, 2021
 """
 
 import csv
@@ -22,7 +22,7 @@ def is_csv(filepath):
 
 def read_csv(filepath):
     with open(filepath, encoding="utf-8") as log_file:
-        log_reader = csv.reader(log_file)
+        log_reader = csv.reader(line.replace("\0", "") for line in log_file)
         header_row = next(log_reader, None)
         for log_row in log_reader:
             yield dict(zip(header_row, log_row))
