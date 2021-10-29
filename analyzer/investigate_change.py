@@ -2,7 +2,7 @@
 For a collection of crawled pages spanning two days,
 investigate the type of changes the pages undergo.
 Author: Daan Kooij
-Last modified: October 28th, 2021
+Last modified: October 29th, 2021
 """
 
 import csv
@@ -151,10 +151,10 @@ def compute_change(input1_dir, input2_dir, output_dir, name, target_fields):
 
 
 def run():
-    # crawls_root = "C:/Users/daank/Drawer/SCM archives/Full crawls"
-    # target_list = ["20210612", "20210613"]
-    crawls_root = "C:/Users/daank/Drawer/SCM archives/Crawl samples"
-    target_list = ["testminiday", "testminiday2"]
+    crawls_root = "C:/Users/daank/Drawer/SCM archives/Full crawls"
+    target_list = ["20210612", "20210613"]
+    # crawls_root = "C:/Users/daank/Drawer/SCM archives/Crawl samples"
+    # target_list = ["testminiday", "testminiday2"]
     output_dir = "output"
 
     # Iterate over the crawls of all days in target_list
