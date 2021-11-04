@@ -210,31 +210,31 @@ def get_raw_linkage_features(log_entry, page_html):
 # HTML feature extraction functions
 
 def set_html_features(page_html, data_point):
-    images, tables, scripts, metas, tags = get_raw_html_features(page_html)
+    images, scripts, tables, metas, tags = get_raw_html_features(page_html)
 
     # Store the computed HTML features in the data point
     data_point.set_feature("images", len(images))
-    data_point.set_feature("tables", len(tables))
     data_point.set_feature("scripts", len(scripts))
+    data_point.set_feature("tables", len(tables))
     data_point.set_feature("meta", len(metas))
     data_point.set_feature("tags_total", len(tags))
     data_point.set_feature("tags_unique", len(set(tags)))
 
 
 def get_raw_html_features(page_html):
-    # Retrieve images, tables, scripts, meta properties, and HTML tags
-    images, tables, scripts, metas, tags = [], [], [], [], []
+    # Retrieve images, scripts, tables, meta properties, and HTML tags
+    images, scripts, tables, metas, tags = [], [], [], [], []
     for image in page_html.find_all("img"):
         images.append(str(image))
-    for table in page_html.find_all("table"):
-        tables.append(str(table))
     for script in page_html.find_all("script"):
         scripts.append(str(script))
+    for table in page_html.find_all("table"):
+        tables.append(str(table))
     for meta in page_html.find_all("meta"):
         metas.append(str(meta))
     for tag in page_html.find_all():
         tags.append(tag.name)
-    return images, tables, scripts, metas, tags
+    return images, scripts, tables, metas, tags
 
 
 # Text feature extraction functions
