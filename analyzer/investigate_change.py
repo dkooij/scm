@@ -47,7 +47,7 @@ def _extract_page_features_text(log_path, crawl_dir, output_dir, feature_names, 
     try:
         csv_writers = initialize_csv_writers(feature_names, files)
         [text_writer, internal_outlinks_writer, external_outlinks_writer, email_links_writer,
-         images_writer, scripts_writer, tables_writer, meta_writer, html_tags_writer] = csv_writers
+         images_writer, scripts_writer, tables_writer, meta_writer, html_tags_writer, page_hash_writer] = csv_writers
 
         previous_page_text = None
         for log_entry in csv_reader.get_log_entries(log_path):
@@ -76,6 +76,12 @@ def _extract_page_features_text(log_path, crawl_dir, output_dir, feature_names, 
                         write_row(tables_writer, tables, log_entry)
                         write_row(meta_writer, metas, log_entry)
                         write_row(html_tags_writer, html_tags, log_entry)
+
+                        # Compute full page hash and write to CSV
+                        page_hash = extractor.get_source_hash(page_html)
+                        write_row(page_hash_writer, page_hash, log_entry)
+
+                        extractor.get_source_hash(page_html)
 
                 previous_page_text = page_text
 
@@ -194,7 +200,7 @@ def compute_change(input1_dir, input2_dir, output_dir, names):
 
 def run():
     feature_names = ["text", "internal_outlinks", "external_outlinks", "email_links",
-                     "images", "scripts", "tables", "meta", "html_tags"]
+                     "images", "scripts", "tables", "meta", "html_tags", "page_hash"]
 
     # crawls_root = "C:/Users/daank/Drawer/SCM archives/Full crawls"
     # target_list = ["20210612", "20210613"]
@@ -204,9 +210,9 @@ def run():
     output_dir = "outputmini"
 
     # Iterate over the crawls of all days in target_list
-    # for input_dir in target_list:
-    #     extract_page_features_text(crawls_root, input_dir, output_dir, feature_names)
-    #     combine_csv_files(input_dir, output_dir, feature_names)
+    for input_dir in target_list:
+        extract_page_features_text(crawls_root, input_dir, output_dir, feature_names)
+        combine_csv_files(input_dir, output_dir, feature_names)
     compute_change(target_list[0], target_list[1], output_dir, feature_names)
 
 
