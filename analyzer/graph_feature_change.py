@@ -17,14 +17,12 @@ def compute_change_fractions_single(csv_path):
         for k, v in log_entry.items():
             if k != "Stage file" and k != "URL index":
                 count_dict[k] += int(v)
-            total += 1
+        total += 1
     return dict((k, v / total) for (k, v) in count_dict.items())
 
 
 def compute_change_fractions():
-    features_fractions = compute_change_fractions_single("output/features-difference.csv")
-    text_fractions = compute_change_fractions_single("output/text-difference.csv")
-    fractions = features_fractions | text_fractions
+    fractions = compute_change_fractions_single("outputmini/differences.csv")
     fractions_sorted = sorted(fractions.items(), key=lambda t: t[1], reverse=True)
     return fractions_sorted
 
