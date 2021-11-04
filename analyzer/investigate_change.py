@@ -2,7 +2,7 @@
 For a collection of crawled pages spanning two days,
 investigate the type of changes the pages undergo.
 Author: Daan Kooij
-Last modified: October 29th, 2021
+Last modified: November 4th, 2021
 """
 
 import csv
@@ -21,59 +21,80 @@ def get_timestamp():
     return datetime.now().strftime("%H:%M:%S") + " - "
 
 
-def _extract_page_features_text(log_path, crawl_dir, text_output_filepath, features_output_filepath):
+def _extract_page_features_text(log_path, crawl_dir, output_dir, feature_names, tid_str):
+    def output_filepath(name):
+        return output_dir + "/" + crawl_dir.split("/")[-1] + "/" + name + "/" + name + "-" + tid_str + ".csv"
+
+    def open_file(name):
+        return open(output_filepath(name), "w", newline="", encoding="utf-8")
+
+    def open_files(names):
+        return [open_file(name) for name in names]
+
+    def initialize_csv_writers(names_arg, files_arg):
+        writers = []
+        for n, f in zip(names_arg, files_arg):
+            writer = csv.writer(f)
+            writer.writerow(["Stage file", "URL index", n])
+            writers.append(writer)
+        return writers
+
+    def write_row(writer, feature, log_entry_arg):
+        writer.writerow([log_entry_arg["Stage file"], log_entry_arg["URL index"], feature])
+
     # Extracts both static simple page features and page text
-    with open(text_output_filepath, "w", newline="", encoding="utf-8") as text_output_file:
-        text_output_writer = csv.writer(text_output_file)
-        text_output_writer.writerow(["Stage file", "URL index", "Page text"])
+    files = open_files(feature_names)
+    try:
+        csv_writers = initialize_csv_writers(feature_names, files)
+        [text_writer, internal_outlinks_writer, external_outlinks_writer, email_links_writer,
+         images_writer, scripts_writer, tables_writer, meta_writer, html_tags_writer] = csv_writers
 
-        with open(features_output_filepath, "w", newline="", encoding="utf-8") as features_output_file:
-            features_output_writer = csv.writer(features_output_file)
-            features_header = []
+        previous_page_text = None
+        for log_entry in csv_reader.get_log_entries(log_path):
+            with open(csv_reader.get_filepath(log_entry, crawl_dir), "rb") as file:
+                page_text = get_page_text(file.read())
 
-            previous_page_text = None
-            for log_entry in csv_reader.get_log_entries(log_path):
-                with open(csv_reader.get_filepath(log_entry, crawl_dir), "rb") as file:
-                    page_text = get_page_text(file.read())
+                if len(page_text) > 0 and page_text != previous_page_text:
+                    file.seek(0)  # To allow reading the file again
+                    page_html = detect_html.get_html(file)
 
-                    if len(page_text) > 0 and page_text != previous_page_text:
-                        file.seek(0)  # To allow reading the file again
-                        page_html = detect_html.get_html(file)
+                    if page_html:
+                        # Write page text to CSV
+                        write_row(text_writer, page_text, log_entry)
 
-                        if page_html:
-                            # Write page text to CSV
-                            text_output_writer.writerow([log_entry["Stage file"], log_entry["URL index"], page_text])
+                        # Compute linkage features and write to CSV
+                        internal_outlinks, external_outlinks, email_links = \
+                            extractor.get_raw_linkage_features(log_entry, page_html)
+                        write_row(internal_outlinks_writer, internal_outlinks, log_entry)
+                        write_row(external_outlinks_writer, external_outlinks, log_entry)
+                        write_row(email_links_writer, email_links, log_entry)
 
-                            # Retrieve and write static page features to CSV
-                            page_words = page_text.split()
-                            data_point = extractor.extract_static_features(log_entry, page_html,
-                                                                           input_dir=crawl_dir,
-                                                                           page_words=page_words)
-                            if len(features_header) == 0:
-                                features_header = ["Stage file", "URL index"] + \
-                                                  sorted(list(data_point.features.keys()))
-                                features_output_writer.writerow(features_header)
-                            feature_values = [v for k, v in sorted(list(data_point.features.items()))]
-                            features_output_writer.writerow([log_entry["Stage file"], log_entry["URL index"]]
-                                                            + feature_values)
+                        # Compute HTML features and write to CSV
+                        images, scripts, tables, metas, html_tags = extractor.get_raw_html_features(page_html)
+                        write_row(images_writer, images, log_entry)
+                        write_row(scripts_writer, scripts, log_entry)
+                        write_row(tables_writer, tables, log_entry)
+                        write_row(meta_writer, metas, log_entry)
+                        write_row(html_tags_writer, html_tags, log_entry)
 
-                    previous_page_text = page_text
+                previous_page_text = page_text
+
+    finally:
+        for file in files:
+            file.close()
 
 
-def extract_page_features_text(crawls_root, input_dir, output_dir):
+def extract_page_features_text(crawls_root, input_dir, output_dir, feature_names):
     processes = []
 
-    text_output_dir = output_dir + "/" + input_dir + "/text"
-    features_output_dir = output_dir + "/" + input_dir + "/features"
-    os.makedirs(text_output_dir, exist_ok=True)
-    os.makedirs(features_output_dir, exist_ok=True)
+    for name in feature_names:
+        feature_output_dir = output_dir + "/" + input_dir + "/" + name
+        os.makedirs(feature_output_dir, exist_ok=True)
 
     crawl_dir = crawls_root + "/" + input_dir
     for tid, log_path in zip(itertools.count(), csv_reader.get_log_paths(crawl_dir)):
-        text_output_filepath = text_output_dir + "/text-" + str(tid) + ".csv"
-        features_output_filepath = features_output_dir + "/features-" + str(tid) + ".csv"
         process = Process(target=_extract_page_features_text, args=(
-            log_path, crawl_dir, text_output_filepath, features_output_filepath))
+            log_path, crawl_dir, output_dir, feature_names, str(tid)))
         process.start()
         processes.append(process)
 
@@ -99,19 +120,24 @@ def extract_semantic_vectors(target, batch_index=0, start_index=0):
 """
 
 
-def combine_csv_files(input_dir, output_dir, name):
+def combine_csv_files(input_dir, output_dir, names):
     """
-    Combine collections of feature and text .csv files into
-    respectively one combined feature file and one combined text file.
+    Combine collections of feature CSV files into
+    one combined feature CSV file per name.
     """
-    entry_path = output_dir + "/" + input_dir + "/" + name
+    combined_output_dir = output_dir + "/" + input_dir + "/combined"
+    os.makedirs(combined_output_dir, exist_ok=True)
 
-    entries = []
-    for entry in csv_reader.get_all_log_entries(entry_path, ignore_validity_check=True):
-        entries.append(entry)
-    entries.sort(key=lambda e: (e["Stage file"], int(e["URL index"])))
-    entry_output_path = output_dir + "/" + input_dir + "/" + name + ".csv"
-    csv_reader.write_csv_file(entry_output_path, entries)
+    for name in names:
+        entry_path = output_dir + "/" + input_dir + "/" + name
+
+        entries = []
+        for entry in csv_reader.get_all_log_entries(entry_path, ignore_validity_check=True):
+            entries.append(entry)
+        entries.sort(key=lambda e: (e["Stage file"], int(e["URL index"])))
+
+        entry_output_path = combined_output_dir + "/" + name + ".csv"
+        csv_reader.write_csv_file(entry_output_path, entries)
 
 
 def compute_change(input1_dir, input2_dir, output_dir, name, target_fields):
@@ -151,21 +177,24 @@ def compute_change(input1_dir, input2_dir, output_dir, name, target_fields):
 
 
 def run():
-    crawls_root = "C:/Users/daank/Drawer/SCM archives/Full crawls"
-    target_list = ["20210612", "20210613"]
-    # crawls_root = "C:/Users/daank/Drawer/SCM archives/Crawl samples"
-    # target_list = ["testminiday", "testminiday2"]
-    output_dir = "output"
+    feature_names = ["text", "internal_outlinks", "external_outlinks", "email_links",
+                     "images", "scripts", "tables", "meta", "html_tags"]
+
+    # crawls_root = "C:/Users/daank/Drawer/SCM archives/Full crawls"
+    # target_list = ["20210612", "20210613"]
+    # output_dir = "output"
+    crawls_root = "C:/Users/daank/Drawer/SCM archives/Crawl samples"
+    target_list = ["testminiday", "testminiday2"]
+    output_dir = "outputmini"
 
     # Iterate over the crawls of all days in target_list
     for input_dir in target_list:
-        extract_page_features_text(crawls_root, input_dir, output_dir)
-        combine_csv_files(input_dir, output_dir, "features")
-        combine_csv_files(input_dir, output_dir, "text")
-    compute_change(target_list[0], target_list[1], output_dir, "features",
-                   ["words_total", "words_unique", "scripts", "external_outlinks", "internal_outlinks",
-                    "email_links", "images", "size", "meta", "tables", "tags_total", "tags_unique"])
-    compute_change(target_list[0], target_list[1], output_dir, "text", ["Page text"])
+        extract_page_features_text(crawls_root, input_dir, output_dir, feature_names)
+        combine_csv_files(input_dir, output_dir, feature_names)
+    # compute_change(target_list[0], target_list[1], output_dir, "features",
+    #                ["words_total", "words_unique", "scripts", "external_outlinks", "internal_outlinks",
+    #                 "email_links", "images", "size", "meta", "tables", "tags_total", "tags_unique"])
+    # compute_change(target_list[0], target_list[1], output_dir, "text", ["Page text"])
 
 
 if __name__ == "__main__":
