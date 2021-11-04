@@ -1,7 +1,7 @@
 """
 Feature Extractor.
 Author: Daan Kooij
-Last modified: September 28th, 2021
+Last modified: November 4th, 2021
 """
 
 from datetime import datetime
@@ -182,24 +182,29 @@ def get_protocol(log_entry):
 # Linkage feature extraction functions
 
 def set_linkage_features(log_entry, page_html, data_point):
+    internal_outlinks, external_outlinks, email_links = get_raw_linkage_features(log_entry, page_html)
+
+    data_point.set_feature("internal_outlinks", len(internal_outlinks))
+    data_point.set_feature("external_outlinks", len(external_outlinks))
+    data_point.set_feature("email_links", len(email_links))
+
+
+def get_raw_linkage_features(log_entry, page_html):
     current_url = strip_protocol(get_url(log_entry))
     root_domain = get_root_domain(current_url)
 
-    internal_outlinks, external_outlinks, mailto_links = 0, 0, 0
+    internal_outlinks, external_outlinks, email_links = [], [], []
     for a in page_html.find_all("a", href=True):
         href_url = a["href"].strip()
         if href_url.startswith("mailto:"):
-            mailto_links += 1
+            email_links.append(href_url)
         else:
             link = href_to_url(href_url, root_domain, current_url)
             if get_sl_domain(link) == get_sl_domain(current_url):
-                internal_outlinks += 1
+                internal_outlinks.append(link)
             else:
-                external_outlinks += 1
-
-    data_point.set_feature("internal_outlinks", internal_outlinks)
-    data_point.set_feature("external_outlinks", external_outlinks)
-    data_point.set_feature("email_links", mailto_links)
+                external_outlinks.append(link)
+    return internal_outlinks, external_outlinks, email_links
 
 
 # HTML feature extraction functions
