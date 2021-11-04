@@ -210,31 +210,31 @@ def get_raw_linkage_features(log_entry, page_html):
 # HTML feature extraction functions
 
 def set_html_features(page_html, data_point):
-    # Count number of images, tables, scripts, and meta properties
-    images, tables, scripts, meta = 0, 0, 0, 0
-    for _ in page_html.find_all("img"):
-        images += 1
-    for _ in page_html.find_all("table"):
-        tables += 1
-    for _ in page_html.find_all("script"):
-        scripts += 1
-    for _ in page_html.find_all("meta"):
-        meta += 1
-
-    # Count number of tags (total and unique)
-    tags_set, tags_total = set(), 0
-    for tag in page_html.find_all():
-        tags_total += 1
-        tags_set.add(tag.name)
-    tags_unique = len(tags_set)
+    images, tables, scripts, metas, tags = get_raw_html_features(page_html)
 
     # Store the computed HTML features in the data point
-    data_point.set_feature("images", images)
-    data_point.set_feature("tables", tables)
-    data_point.set_feature("scripts", scripts)
-    data_point.set_feature("meta", meta)
-    data_point.set_feature("tags_total", tags_total)
-    data_point.set_feature("tags_unique", tags_unique)
+    data_point.set_feature("images", len(images))
+    data_point.set_feature("tables", len(tables))
+    data_point.set_feature("scripts", len(scripts))
+    data_point.set_feature("meta", len(metas))
+    data_point.set_feature("tags_total", len(tags))
+    data_point.set_feature("tags_unique", len(set(tags)))
+
+
+def get_raw_html_features(page_html):
+    # Retrieve images, tables, scripts, meta properties, and HTML tags
+    images, tables, scripts, metas, tags = [], [], [], [], []
+    for image in page_html.find_all("img"):
+        images.append(str(image))
+    for table in page_html.find_all("table"):
+        tables.append(str(table))
+    for script in page_html.find_all("script"):
+        scripts.append(str(script))
+    for meta in page_html.find_all("meta"):
+        metas.append(str(meta))
+    for tag in page_html.find_all():
+        tags.append(tag.name)
+    return images, tables, scripts, metas, tags
 
 
 # Text feature extraction functions
