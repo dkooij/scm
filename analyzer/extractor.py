@@ -5,6 +5,7 @@ Last modified: November 4th, 2021
 """
 
 from datetime import datetime
+import hashlib
 import os
 
 import csv_reader
@@ -121,6 +122,10 @@ def get_weekday(log_entry):
     timestamp = get_timestamp(log_entry)
     weekday_int = timestamp.weekday()
     return Weekday(weekday_int)
+
+
+def get_source_hash(page_html):
+    return hashlib.md5(str(page_html).encode("utf-8")).hexdigest()
 
 
 # URL feature extraction functions
