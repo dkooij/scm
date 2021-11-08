@@ -2,7 +2,7 @@
 For a collection of crawled pages spanning two days,
 investigate the type of changes the pages undergo.
 Author: Daan Kooij
-Last modified: November 4th, 2021
+Last modified: November 8th, 2021
 """
 
 import csv
@@ -152,35 +152,11 @@ def compute_change(input1_dir, input2_dir, output_dir, names):
     for name in names:
         entry_path1 = output_dir + "/" + input1_dir + "/combined/" + name + ".csv"
         entry_path2 = output_dir + "/" + input2_dir + "/combined/" + name + ".csv"
-        gen1 = csv_reader.get_log_entries(entry_path1, ignore_validity_check=True)
-        gen2 = csv_reader.get_log_entries(entry_path2, ignore_validity_check=True)
-
         differences = []
-
-        try:
-            entry1, entry2 = next(gen1), next(gen2)
-            while True:
-                stage1, stage2 = int(entry1["Stage file"][-2:]), int(entry2["Stage file"][-2:])
-                index1, index2 = int(entry1["URL index"]), int(entry2["URL index"])
-                if stage1 == stage2:
-                    if index1 == index2:
-
-                        result = {"Stage file": entry1["Stage file"], "URL index": entry1["URL index"]}
-                        for target_field in [name]:
-                            result[target_field] = "0" if entry1[target_field] == entry2[target_field] else "1"
-                        differences.append(result)
-
-                    if index1 <= index2:
-                        entry1 = next(gen1)
-                    if index1 >= index2:
-                        entry2 = next(gen2)
-                elif stage1 < stage2:
-                    entry1 = next(gen1)
-                elif stage1 > stage2:
-                    entry2 = next(gen2)
-        except StopIteration:
-            pass  # Done! Reached the end of one CSV file.
-
+        for log_entry_pair in csv_reader.get_log_entry_pairs(entry_path1, entry_path2, ignore_validity_check=True):
+            result = {"Stage file": log_entry_pair["Stage file"], "URL index": log_entry_pair["URL index"],
+                      name: "0" if log_entry_pair[name + "-1"] == log_entry_pair[name + "-2"] else "1"}
+            differences.append(result)
         differences_matrix.append(differences)
 
     combined_differences = []
