@@ -2,7 +2,7 @@
 CSV Reader Generator.
 Make CSV rows indexable by CSV header keys.
 Author: Daan Kooij
-Last modified: October 29th, 2021
+Last modified: November 8th, 2021
 """
 
 import csv
@@ -49,6 +49,39 @@ def get_all_log_entries(input_dir, ignore_validity_check=False):
     for log_path in get_log_paths(input_dir):
         for log_entry in get_log_entries(log_path, ignore_validity_check=ignore_validity_check):
             yield log_entry
+
+
+def get_log_entry_pairs(entry_path1, entry_path2, ignore_validity_check=False):
+    gen1 = get_log_entries(entry_path1, ignore_validity_check=ignore_validity_check)
+    gen2 = get_log_entries(entry_path2, ignore_validity_check=ignore_validity_check)
+
+    try:
+        entry1, entry2 = next(gen1), next(gen2)
+        while True:
+            stage1, stage2 = int(entry1["Stage file"][-2:]), int(entry2["Stage file"][-2:])
+            index1, index2 = int(entry1["URL index"]), int(entry2["URL index"])
+            if stage1 == stage2:
+                if index1 == index2:
+
+                    pair_entry = {"Stage file": entry1["Stage file"], "URL index": entry1["URL index"]}
+                    for k, v in entry1.items():
+                        if k != "Stage file" and k != "URL index":
+                            pair_entry[k + "-1"] = v
+                    for k, v in entry2.items():
+                        if k != "Stage file" and k != "URL index":
+                            pair_entry[k + "-2"] = v
+                    yield pair_entry
+
+                if index1 <= index2:
+                    entry1 = next(gen1)
+                if index1 >= index2:
+                    entry2 = next(gen2)
+            elif stage1 < stage2:
+                entry1 = next(gen1)
+            elif stage1 > stage2:
+                entry2 = next(gen2)
+    except StopIteration:
+        pass  # Done! Reached the end of one CSV file.
 
 
 def get_filename(log_entry):
