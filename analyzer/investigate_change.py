@@ -78,10 +78,9 @@ def _extract_page_features_text(log_path, crawl_dir, output_dir, feature_names, 
                         write_row(html_tags_writer, html_tags, log_entry)
 
                         # Compute full page hash and write to CSV
-                        page_hash = extractor.get_source_hash(page_html)
+                        file.seek(0)  # To allow reading the file again
+                        page_hash = extractor.get_source_hash(file.read())
                         write_row(page_hash_writer, page_hash, log_entry)
-
-                        extractor.get_source_hash(page_html)
 
                 previous_page_text = page_text
 

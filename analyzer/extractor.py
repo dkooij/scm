@@ -124,8 +124,8 @@ def get_weekday(log_entry):
     return Weekday(weekday_int)
 
 
-def get_source_hash(page_html):
-    return hashlib.md5(str(page_html).encode("utf-8")).hexdigest()
+def get_source_hash(page_source):
+    return hashlib.md5(str(page_source).encode("utf-8")).hexdigest()
 
 
 # URL feature extraction functions
