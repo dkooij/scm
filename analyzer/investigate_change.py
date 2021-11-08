@@ -14,7 +14,7 @@ import os
 import csv_reader
 import detect_html
 import extractor
-from get_page_text import get_page_text
+import get_page_text
 
 
 def get_timestamp():
@@ -52,7 +52,8 @@ def _extract_page_features_text(log_path, crawl_dir, output_dir, feature_names, 
         previous_page_text = None
         for log_entry in csv_reader.get_log_entries(log_path):
             with open(csv_reader.get_filepath(log_entry, crawl_dir), "rb") as file:
-                page_text = get_page_text(file.read())
+                page_text_list = get_page_text.get_page_text(file.read(), one_line=False)
+                page_text = get_page_text.list_to_str(page_text_list)
 
                 if len(page_text) > 0 and page_text != previous_page_text:
                     file.seek(0)  # To allow reading the file again
@@ -60,7 +61,7 @@ def _extract_page_features_text(log_path, crawl_dir, output_dir, feature_names, 
 
                     if page_html:
                         # Write page text to CSV
-                        write_row(text_writer, page_text, log_entry)
+                        write_row(text_writer, str(page_text_list), log_entry)
 
                         # Compute linkage features and write to CSV
                         internal_outlinks, external_outlinks, email_links = \
