@@ -2,7 +2,7 @@
 CSV Reader Generator.
 Make CSV rows indexable by CSV header keys.
 Author: Daan Kooij
-Last modified: November 8th, 2021
+Last modified: November 11th, 2021
 """
 
 import csv
@@ -11,7 +11,7 @@ import os
 
 # CSV reader setup
 
-csv.field_size_limit(10485760)
+csv.field_size_limit(10485760 * 4)
 
 
 # Generic CSV reader functions
