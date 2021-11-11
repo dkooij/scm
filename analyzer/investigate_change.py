@@ -2,7 +2,7 @@
 For a collection of crawled pages spanning two days,
 investigate the type of changes the pages undergo.
 Author: Daan Kooij
-Last modified: November 8th, 2021
+Last modified: November 11th, 2021
 """
 
 import csv
@@ -15,6 +15,10 @@ import csv_reader
 import detect_html
 import extractor
 import get_page_text
+import text_overlap
+
+
+MAX_OVERLAP = 0.75
 
 
 def get_timestamp():
@@ -52,16 +56,17 @@ def _extract_page_features_text(log_path, crawl_dir, output_dir, feature_names, 
         previous_page_text = None
         for log_entry in csv_reader.get_log_entries(log_path):
             with open(csv_reader.get_filepath(log_entry, crawl_dir), "rb") as file:
-                page_text_list = get_page_text.get_page_text(file.read(), one_line=False)
-                page_text = get_page_text.list_to_str(page_text_list)
+                page_text = get_page_text.get_page_text(file.read(), one_line=False)
 
-                if len(page_text) > 0 and page_text != previous_page_text:
+                if previous_page_text is None or \
+                        (len(page_text) > 0 and
+                         text_overlap.get_overlap_fraction(page_text, previous_page_text) <= MAX_OVERLAP):
                     file.seek(0)  # To allow reading the file again
                     page_html = detect_html.get_html(file)
 
                     if page_html:
                         # Write page text to CSV
-                        write_row(text_writer, str(page_text_list), log_entry)
+                        write_row(text_writer, str(page_text), log_entry)
 
                         # Compute linkage features and write to CSV
                         internal_outlinks, external_outlinks, email_links = \
@@ -189,8 +194,11 @@ def run():
     for input_dir in target_list:
         extract_page_features_text(crawls_root, input_dir, output_dir, feature_names)
         combine_csv_files(input_dir, output_dir, feature_names)
-    compute_change(target_list[0], target_list[1], output_dir, feature_names)
+    # compute_change(target_list[0], target_list[1], output_dir, feature_names)
 
 
 if __name__ == "__main__":
+    start = datetime.now()
     run()
+    end = datetime.now()
+    print((end - start).seconds)
