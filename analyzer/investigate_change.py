@@ -95,7 +95,7 @@ def _extract_page_features_text(log_path, crawl_dir, output_dir, feature_names, 
             file.close()
 
 
-def extract_page_features_text(crawls_root, input_dir, output_dir, feature_names):
+def extract_page_features_text(crawls_root, input_dir, output_dir, feature_names, multi_threaded=True):
     processes = []
 
     for name in feature_names:
@@ -106,10 +106,13 @@ def extract_page_features_text(crawls_root, input_dir, output_dir, feature_names
     for tid, log_path in zip(itertools.count(), csv_reader.get_log_paths(crawl_dir)):
         process = Process(target=_extract_page_features_text, args=(
             log_path, crawl_dir, output_dir, feature_names, str(tid)))
-        process.start()
+        if multi_threaded:
+            process.start()
         processes.append(process)
 
     for process in processes:
+        if not multi_threaded:
+            process.start()
         process.join()
 
 
