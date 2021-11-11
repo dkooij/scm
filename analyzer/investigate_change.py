@@ -5,6 +5,7 @@ Author: Daan Kooij
 Last modified: November 11th, 2021
 """
 
+import ast
 import csv
 from datetime import datetime
 import itertools
@@ -162,8 +163,17 @@ def compute_change(input1_dir, input2_dir, output_dir, names):
         entry_path2 = output_dir + "/" + input2_dir + "/combined/" + name + ".csv"
         differences = []
         for log_entry_pair in csv_reader.get_log_entry_pairs(entry_path1, entry_path2, ignore_validity_check=True):
-            result = {"Stage file": log_entry_pair["Stage file"], "URL index": log_entry_pair["URL index"],
-                      name: "0" if log_entry_pair[name + "-1"] == log_entry_pair[name + "-2"] else "1"}
+            field1, field2 = log_entry_pair[name + "-1"], log_entry_pair[name + "-2"]
+            result = {"Stage file": log_entry_pair["Stage file"], "URL index": log_entry_pair["URL index"]}
+            try:
+                values1, values2 = ast.literal_eval(field1), ast.literal_eval(field2)
+                opcode_stats = text_overlap.get_opcode_stats(values1, values2)
+                # overlap = t[0] / (t[0] + (t[1]+t[2]) / 2)
+                result[name] = opcode_stats
+            except (SyntaxError, ValueError):
+                # In case we cannot infer type at AST parsing (e.g. for page hash),
+                # fall back to computing binary change.
+                result[name] = 0 if field1 == field2 else 1
             differences.append(result)
         differences_matrix.append(differences)
 
@@ -186,18 +196,18 @@ def run():
     feature_names = ["text", "internal_outlinks", "external_outlinks", "email_links",
                      "images", "scripts", "tables", "meta", "html_tags", "page_hash"]
 
-    # crawls_root = "C:/Users/daank/Drawer/SCM archives/Full crawls"
-    # target_list = ["20210612", "20210613"]
-    # output_dir = "output"
-    crawls_root = "C:/Users/daank/Drawer/SCM archives/Crawl samples"
-    target_list = ["testminiday", "testminiday2"]
-    output_dir = "outputmini"
+    crawls_root = "C:/Users/daank/Drawer/SCM archives/Full crawls"
+    target_list = ["20210612", "20210613"]
+    output_dir = "output"
+    # crawls_root = "C:/Users/daank/Drawer/SCM archives/Crawl samples"
+    # target_list = ["testminiday", "testminiday2"]
+    # output_dir = "outputmini"
 
     # Iterate over the crawls of all days in target_list
     for input_dir in target_list:
         extract_page_features_text(crawls_root, input_dir, output_dir, feature_names)
         combine_csv_files(input_dir, output_dir, feature_names)
-    # compute_change(target_list[0], target_list[1], output_dir, feature_names)
+    compute_change(target_list[0], target_list[1], output_dir, feature_names)
 
 
 if __name__ == "__main__":
