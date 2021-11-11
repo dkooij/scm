@@ -59,7 +59,7 @@ def _extract_page_features_text(log_path, crawl_dir, output_dir, feature_names, 
                 page_text = get_page_text.get_page_text(file.read(), one_line=False)
 
                 if previous_page_text is None or \
-                        (len(page_text) > 0 and
+                        (len(page_text) > 0 and not text_overlap.start_overlap(previous_page_text, page_text) and
                          text_overlap.get_overlap_fraction(page_text, previous_page_text) <= MAX_OVERLAP):
                     file.seek(0)  # To allow reading the file again
                     page_html = detect_html.get_html(file)
