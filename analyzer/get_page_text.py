@@ -8,7 +8,7 @@ import ast
 from html2text import HTML2Text
 
 
-def get_page_text(binary_data, one_line=True, wrap_text=False):
+def get_page_text(binary_data, one_line=True, wrap_text=True):
     try:
         page_data_str = str(binary_data, encoding="utf-8")
         parser = HTML2Text()
