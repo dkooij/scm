@@ -11,30 +11,48 @@ import matplotlib.pyplot as plt
 import csv_reader
 
 
-def compute_change_fractions_single(csv_path):
-    count_dict = defaultdict(int)
-    total = 0
-    for log_entry in csv_reader.get_log_entries(csv_path, ignore_validity_check=True):
-        any_change, change_detected = False, False
-        for k, v in log_entry.items():
-            if k != "Stage file" and k != "URL index":
-                t = ast.literal_eval(v)
-                if isinstance(t, tuple) and (t[1] != 0 or t[2] != 0):
-                    count_dict[k] += 1
-                    change_detected = True
-                elif k == "page_hash" and v == "1":
-                    count_dict[k] += 1
-                    any_change = True
-        if any_change and not change_detected:
-            count_dict["other"] += 1
-        total += 1
-    return dict((k, v / total) for (k, v) in count_dict.items())
-
-
 def compute_change_fractions():
-    fractions = compute_change_fractions_single("outputmini/differences.csv")
+    def compute(csv_path):
+        count_dict = defaultdict(int)
+        total = 0
+        for log_entry in csv_reader.get_log_entries(csv_path, ignore_validity_check=True):
+            any_change, change_detected = False, False
+            for k, v in log_entry.items():
+                if k != "Stage file" and k != "URL index":
+                    t = ast.literal_eval(v)
+                    if isinstance(t, tuple) and (t[1] != 0 or t[2] != 0):
+                        count_dict[k] += 1
+                        change_detected = True
+                    elif k == "page_hash" and v == "1":
+                        count_dict[k] += 1
+                        any_change = True
+            if any_change and not change_detected:
+                count_dict["other"] += 1
+            total += 1
+        return dict((k, v / total) for (k, v) in count_dict.items())
+
+    fractions = compute("outputmini/differences.csv")
     fractions_sorted = sorted(fractions.items(), key=lambda t: t[1], reverse=True)
     return fractions_sorted
+
+
+def compute_change_amplitudes():
+    def compute(csv_path):
+        ins_fractions, del_fractions, changes_dict = defaultdict(int), defaultdict(int), defaultdict(int)
+        for log_entry in csv_reader.get_log_entries(csv_path, ignore_validity_check=True):
+            for k, v in log_entry.items():
+                if k != "Stage file" and k != "URL index":
+                    t = ast.literal_eval(v)
+                    if isinstance(t, tuple) and (t[1] != 0 or t[2] != 0):
+                        total_ops = t[0] + t[1] + t[2]
+                        ins_fractions[k] += t[1] / total_ops
+                        del_fractions[k] += t[2] / total_ops
+                        changes_dict[k] += 1
+        return dict((k, v / changes_dict[k]) for (k, v) in ins_fractions.items()), \
+               dict((k, v / changes_dict[k]) for (k, v) in del_fractions.items())
+
+    insert_fractions, delete_fractions = compute("outputmini/differences.csv")
+    return list(insert_fractions.items()), list(delete_fractions.items())
 
 
 def plot_change_fractions(change_fractions):
@@ -47,4 +65,17 @@ def plot_change_fractions(change_fractions):
     plt.show()
 
 
-plot_change_fractions(compute_change_fractions())
+def plot_change_amplitudes(fractions):
+    (insert_fractions, delete_fractions) = fractions
+    plt.bar([k for k, _ in insert_fractions], [v for _, v in insert_fractions])
+    plt.bar([k for k, _ in delete_fractions], [-v for _, v in delete_fractions])
+    plt.title("Change amplitudes when features change")
+    plt.xlabel("Page feature")
+    plt.ylabel("Change amplitude")
+    plt.xticks(rotation=90)
+    plt.tight_layout()
+    plt.show()
+
+
+# plot_change_fractions(compute_change_fractions())
+plot_change_amplitudes(compute_change_amplitudes())
