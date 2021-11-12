@@ -89,6 +89,11 @@ def _extract_page_features_text(log_path, crawl_dir, output_dir, feature_names, 
                         page_hash = extractor.get_source_hash(file.read())
                         write_row(page_hash_writer, page_hash, log_entry)
 
+                        # Decode page source and write to CSV
+                        # file.seek(0)  # To allow reading the file again
+                        # page_source = "".join([line for line in file.read().decode("utf-8")]).splitlines()
+                        # write_row(page_source_writer, page_source, log_entry)
+
                 previous_page_text = page_text
 
     finally:
@@ -196,12 +201,12 @@ def run():
     feature_names = ["text", "internal_outlinks", "external_outlinks", "email_links",
                      "images", "scripts", "tables", "meta", "html_tags", "page_hash"]
 
-    crawls_root = "C:/Users/daank/Drawer/SCM archives/Full crawls"
-    target_list = ["20210612", "20210613"]
-    output_dir = "output"
-    # crawls_root = "C:/Users/daank/Drawer/SCM archives/Crawl samples"
-    # target_list = ["testminiday", "testminiday2"]
-    # output_dir = "outputmini"
+    # crawls_root = "C:/Users/daank/Drawer/SCM archives/Full crawls"
+    # target_list = ["20210612", "20210613"]
+    # output_dir = "output"
+    crawls_root = "C:/Users/daank/Drawer/SCM archives/Crawl samples"
+    target_list = ["testminiday", "testminiday2"]
+    output_dir = "outputmini"
 
     # Iterate over the crawls of all days in target_list
     for input_dir in target_list:
