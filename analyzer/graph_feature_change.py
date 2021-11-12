@@ -1,11 +1,12 @@
 """
 Read feature change data and compute feature change statistics.
 Author: Daan Kooij
-Last modified: November 4th, 2021
+Last modified: November 12th, 2021
 """
 
+import ast
 from collections import defaultdict
-import plotly.express as px
+import matplotlib.pyplot as plt
 
 import csv_reader
 
@@ -14,9 +15,18 @@ def compute_change_fractions_single(csv_path):
     count_dict = defaultdict(int)
     total = 0
     for log_entry in csv_reader.get_log_entries(csv_path, ignore_validity_check=True):
+        any_change, change_detected = False, False
         for k, v in log_entry.items():
             if k != "Stage file" and k != "URL index":
-                count_dict[k] += int(v)
+                t = ast.literal_eval(v)
+                if isinstance(t, tuple) and (t[1] != 0 or t[2] != 0):
+                    count_dict[k] += 1
+                    change_detected = True
+                elif k == "page_hash" and v == "1":
+                    count_dict[k] += 1
+                    any_change = True
+        if any_change and not change_detected:
+            count_dict["other"] += 1
         total += 1
     return dict((k, v / total) for (k, v) in count_dict.items())
 
@@ -28,12 +38,13 @@ def compute_change_fractions():
 
 
 def plot_change_fractions(change_fractions):
-    px.bar(
-        x=[k for k, _ in change_fractions],
-        y=[v for _, v in change_fractions],
-        title="Probabilities that page features change in 24 hours",
-        labels={"x": "Page feature", "y": "Fraction changed"}
-    ).show()
+    plt.bar([k for k, _ in change_fractions], [v for _, v in change_fractions])
+    plt.title("Probabilities that page features change in 24 hours")
+    plt.xlabel("Page feature")
+    plt.ylabel("Fraction changed")
+    plt.xticks(rotation=90)
+    plt.tight_layout()
+    plt.show()
 
 
 plot_change_fractions(compute_change_fractions())
