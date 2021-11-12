@@ -1,11 +1,12 @@
 """
 Compute the overlap between two lists of texts.
 Author: Daan Kooij
-Last modified: November 11th, 2021
+Last modified: November 12th, 2021
 """
 
 import ast
 import difflib
+import os
 
 import csv_reader
 
@@ -48,15 +49,22 @@ def compute_change(input1_dir, input2_dir, output_dir, name, include_equal=True)
             delete += t[2]
     return equal, insert, delete
 
-        # if text1 != text2:
-        #     h = difflib.HtmlDiff()
-        #     d = h.make_file(text1, text2)
-        #     with open("test.html", "w") as file:
-        #         file.write(d)
-        #         print()
-            # x = get_overlap_fraction(text1, text2)
-            # print(x)
+
+def html_compare(input1_dir, input2_dir, output_dir, name):
+    entry_path1 = output_dir + "/" + input1_dir + "/combined/" + name + ".csv"
+    entry_path2 = output_dir + "/" + input2_dir + "/combined/" + name + ".csv"
+    output_root = "outputhtml/" + name
+    os.makedirs(output_root, exist_ok=True)
+    for log_entry_pair in csv_reader.get_log_entry_pairs(entry_path1, entry_path2, ignore_validity_check=True):
+        value1_str_list, value2_str_list = log_entry_pair[name + "-1"], log_entry_pair[name + "-2"]
+        value1_list, value2_list = ast.literal_eval(value1_str_list), ast.literal_eval(value2_str_list)
+        if value1_list != value2_list:
+            html_diff = difflib.HtmlDiff()
+            html_source = html_diff.make_file(value1_list, value2_list)
+            output_path = output_root + "/" + log_entry_pair["Stage file"] + "-" + log_entry_pair["URL index"] + ".html"
+            with open(output_path, "w") as output_file:
+                output_file.write(html_source)
 
 
 # print(compute_change("testminiday", "testminiday2", "outputmini", "text"))
-# print(compute_change("testminiday", "testminiday2", "outputmini", "text", include_equal=False))
+# html_compare("testminiday", "testminiday2", "outputmini", "text")
