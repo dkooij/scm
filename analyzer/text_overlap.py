@@ -79,4 +79,5 @@ def html_compare(input1_dir, input2_dir, output_dir, name, sample=-1):
 
 
 # print(compute_change("testminiday", "testminiday2", "outputmini", "text"))
-html_compare("testminiday", "testminiday2", "outputmini", "text", sample=10)
+# html_compare("testminiday", "testminiday2", "outputmini", "text", sample=10)
+# html_compare("20210612", "20210613", "output", "text", sample=300)
