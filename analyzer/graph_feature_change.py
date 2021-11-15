@@ -78,5 +78,6 @@ def plot_change_amplitudes(fractions):
     plt.show()
 
 
+print(compute_change_fractions("output/differences.csv"))
 # plot_change_fractions(compute_change_fractions("output/differences.csv"))
 plot_change_amplitudes(compute_change_amplitudes("output/differences.csv"))
