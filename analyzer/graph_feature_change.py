@@ -1,12 +1,13 @@
 """
 Read feature change data and compute feature change statistics.
 Author: Daan Kooij
-Last modified: November 17th, 2021
+Last modified: November 18th, 2021
 """
 
 import ast
 from collections import defaultdict
 import matplotlib.pyplot as plt
+import numpy as np
 
 import csv_reader
 
@@ -48,6 +49,7 @@ def compute_change_fractions(differences_file_path):
 def compute_change_amplitudes(differences_file_path):
     def compute(csv_path):
         ins_fractions, del_fractions, changes_dict = defaultdict(int), defaultdict(int), defaultdict(int)
+        ins_fractions_lists, del_fractions_lists = defaultdict(list), defaultdict(list)
         for log_entry in csv_reader.get_log_entries(csv_path, ignore_validity_check=True):
             for k, v in log_entry.items():
                 if k != "Stage file" and k != "URL index":
@@ -56,14 +58,23 @@ def compute_change_amplitudes(differences_file_path):
                         total_ops = t[0] + t[1] + t[2]
                         ins_fractions[k] += t[1] / total_ops
                         del_fractions[k] += t[2] / total_ops
+                        ins_fractions_lists[k].append(t[1] / total_ops)
+                        del_fractions_lists[k].append(t[2] / total_ops)
                         changes_dict[k] += 1
         return dict((k, v / changes_dict[k]) for (k, v) in ins_fractions.items()), \
-               dict((k, v / changes_dict[k]) for (k, v) in del_fractions.items())
+               dict((k, v / changes_dict[k]) for (k, v) in del_fractions.items()), \
+               ins_fractions_lists, del_fractions_lists
 
-    insert_fractions, delete_fractions = compute(differences_file_path)
+    insert_fractions, delete_fractions, ins_fractions_lists, del_fractions_lists = compute(differences_file_path)
     sorted_fractions = sorted(list(zip(insert_fractions.items(), delete_fractions.items())),
                               key=lambda t: t[0][1] + t[1][1], reverse=True)
-    return [t[0] for t in sorted_fractions], [t[1] for t in sorted_fractions]
+
+    change_amplitudes = ([t[0] for t in sorted_fractions], [t[1] for t in sorted_fractions])
+    fractions_lists = sorted([(k, (sorted(ins_fractions_lists[k], reverse=True),
+                                   sorted(del_fractions_lists[k], reverse=True)))
+                              for k in ins_fractions_lists.keys()])
+
+    return change_amplitudes, fractions_lists
 
 
 def plot_change_fractions(change_fractions):
@@ -105,11 +116,29 @@ def plot_change_amplitudes(fractions):
     print(" * plotted change amplitudes")
 
 
+def plot_change_amplitude_percentile(fractions_lists):
+    fig = plt.figure()  # plt.figure(figsize=(6.4, 4.8))
+    plot_index = 0
+    for name, (y_ins, y_del) in fractions_lists:
+        plot_index += 1
+        ax = fig.add_subplot(3, 3, plot_index)
+        x = np.linspace(0, 1, num=len(y_ins))
+        ax.plot(x, y_del, color=plt.cm.Dark2(1), linewidth=2.5, label="del")
+        ax.plot(x, y_ins, color=plt.cm.Dark2(0), linewidth=2.5, label="ins")
+        ax.set_title(name)
+    fig.suptitle("Change amplitude percentile plots per feature")
+    plt.tight_layout()
+
+    plt.savefig("figures/change-amplitudes-percentile.png", dpi=400)
+    print(" * plotted change amplitudes percentile curve")
+
+
 _change_fractions, _informative_tuple = compute_change_fractions("output/differences.csv")
 print("Change fractions:", _change_fractions)
 print("Informative tuple:", _informative_tuple)
 plot_change_fractions(_change_fractions)
 plot_informative_tuple(_informative_tuple)
 
-_change_amplitudes = compute_change_amplitudes("output/differences.csv")
+_change_amplitudes, _fractions_lists = compute_change_amplitudes("output/differences.csv")
 plot_change_amplitudes(_change_amplitudes)
+plot_change_amplitude_percentile(_fractions_lists)
