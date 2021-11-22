@@ -80,17 +80,23 @@ def compute_change_amplitudes(differences_file_path):
 def get_text_change_categories(csv_file_path):
     entries = csv_reader.get_log_entries(csv_file_path, ignore_validity_check=True, excel_mode=True)
     parsed_entries = map(lambda e: {"Page": e["Page"], "Categories": set(e["Categories"].split(","))}, entries)
+    useful_categories = ("News headline", "New content", "Updated agenda", "User reply")
 
     categories = defaultdict(int)
     number_of_entries = 0
+    useful_counter = 0
     for entry in parsed_entries:
+        useful_bool = False
         for category in entry["Categories"]:
             categories[category] += 1
+            if category in useful_categories:
+                useful_bool = True
+        useful_counter += useful_bool
         number_of_entries += 1
 
     categories_list = sorted(list(categories.items()), key=lambda t: (-t[1], t[0]))
     categories_list = [(c, a / number_of_entries) for c, a in categories_list]
-    return categories_list
+    return categories_list, useful_counter / number_of_entries
 
 
 def plot_change_fractions(change_fractions):
@@ -172,4 +178,6 @@ _change_amplitudes, _fractions_lists = compute_change_amplitudes("output/differe
 plot_change_amplitudes(_change_amplitudes)
 plot_change_amplitude_percentile(_fractions_lists)
 
-plot_text_change_categories(get_text_change_categories("inputmisc/manual-change-categories.csv"))
+_text_change_categories, _text_change_useful = get_text_change_categories("inputmisc/manual-change-categories.csv")
+plot_text_change_categories(_text_change_categories)
+print("Useful page text changes:", _text_change_useful)
