@@ -1,7 +1,7 @@
 """
 Read feature change data and compute feature change statistics.
 Author: Daan Kooij
-Last modified: November 18th, 2021
+Last modified: November 22nd, 2021
 """
 
 import ast
@@ -77,6 +77,22 @@ def compute_change_amplitudes(differences_file_path):
     return change_amplitudes, fractions_lists
 
 
+def get_text_change_categories(csv_file_path):
+    entries = csv_reader.get_log_entries(csv_file_path, ignore_validity_check=True, excel_mode=True)
+    parsed_entries = map(lambda e: {"Page": e["Page"], "Categories": set(e["Categories"].split(","))}, entries)
+
+    categories = defaultdict(int)
+    number_of_entries = 0
+    for entry in parsed_entries:
+        for category in entry["Categories"]:
+            categories[category] += 1
+        number_of_entries += 1
+
+    categories_list = sorted(list(categories.items()), key=lambda t: (-t[1], t[0]))
+    categories_list = [(c, a / number_of_entries) for c, a in categories_list]
+    return categories_list
+
+
 def plot_change_fractions(change_fractions):
     plt.figure()
     plt.bar([k for k, _ in change_fractions], [v for _, v in change_fractions], color=plt.cm.Dark2(0))
@@ -133,6 +149,19 @@ def plot_change_amplitude_percentile(fractions_lists):
     print(" * plotted change amplitudes percentile curve")
 
 
+def plot_text_change_categories(categories_list):
+    plt.figure()
+    plt.bar([k for k, _ in categories_list], [v for _, v in categories_list], color=plt.cm.Dark2(0))
+    plt.title("Distribution over text change categories")
+    plt.xlabel("Change category")
+    plt.ylabel("Fraction of cases")
+    plt.xticks(rotation=90)
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig("figures/text-change-categories.png", dpi=400)
+    print(" * plotted text change categories")
+
+
 _change_fractions, _informative_tuple = compute_change_fractions("output/differences.csv")
 print("Change fractions:", _change_fractions)
 print("Informative tuple:", _informative_tuple)
@@ -142,3 +171,5 @@ plot_informative_tuple(_informative_tuple)
 _change_amplitudes, _fractions_lists = compute_change_amplitudes("output/differences.csv")
 plot_change_amplitudes(_change_amplitudes)
 plot_change_amplitude_percentile(_fractions_lists)
+
+plot_text_change_categories(get_text_change_categories("inputmisc/manual-change-categories.csv"))
