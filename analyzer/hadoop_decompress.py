@@ -4,6 +4,7 @@ Author: Daan Kooij
 Last modified: November 23rd, 2021
 """
 
+import hashlib
 from pyspark import SparkContext
 from pyspark.sql import SparkSession
 import zlib
@@ -21,8 +22,9 @@ def decompress(log_entry):
     return log_entry
 
 
-rdd = sc.pickleFile("/user/s1839047/crawls_test_compressed/miniday")
+rdd = sc.pickleFile("/user/s1839047/crawls_compressed/20210613")
 print(list(rdd.first()[1].keys()))
-print(rdd.count())
-
 # print(rdd.mapValues(decompress).first())
+for k, v in rdd.mapValues(decompress).take(10):
+    print(k, hashlib.md5(str(v["Binary data"]).encode("utf-8")).hexdigest())
+print(rdd.count())
