@@ -1,7 +1,7 @@
 """
 Submit a batch of crawl processing jobs.
 Author: Daan Kooij
-Last modified: October 28th, 2021
+Last modified: November 23rd, 2021
 """
 
 import os
@@ -30,7 +30,21 @@ crawl_dirs = ["20210612000004", "20210613000001", "20210614000002", "20210615000
               "20210831000004", "20210901000010", "20210902000008", "20210903000003", "20210904000003",
               "20210905000003", "20210906000002", "20210907000006", "20210908000002", "20210909000003"]
 
-for dir1, dir2 in zip(crawl_dirs, crawl_dirs[1:]):
+# for dir1, dir2 in zip(crawl_dirs, crawl_dirs[1:]):
+#     os.system("kinit -kt " + KEYTAB_FILE + " " + KEYTAB_USER)
+#     os.system("cd /home/s1839047/SCM/analyzer && "
+#               "time spark-submit \
+#                --master yarn \
+#                --deploy-mode cluster \
+#                --conf spark.yarn.appMasterEnv.PYSPARK_PYTHON=./environment/bin/python \
+#                --conf spark.dynamicAllocation.maxExecutors=100 \
+#                --executor-cores 4 \
+#                --executor-memory 7G \
+#                --archives /home/s1839047/pyspark-envs/v3.tar.gz#environment \
+#                --py-files get_page_text.py,text_overlap.py \
+#                /home/s1839047/SCM/analyzer/hadoop_process_crawls.py " + dir1 + " " + dir2)
+
+for directory in crawl_dirs:
     os.system("kinit -kt " + KEYTAB_FILE + " " + KEYTAB_USER)
     os.system("cd /home/s1839047/SCM/analyzer && "
               "time spark-submit \
@@ -42,6 +56,6 @@ for dir1, dir2 in zip(crawl_dirs, crawl_dirs[1:]):
                --executor-memory 7G \
                --archives /home/s1839047/pyspark-envs/v3.tar.gz#environment \
                --py-files get_page_text.py,text_overlap.py \
-               /home/s1839047/SCM/analyzer/hadoop_process_crawls.py " + dir1 + " " + dir2)
+               /home/s1839047/SCM/analyzer/hadoop_process_crawls.py " + directory)
 
 print("\nDone!\n")
