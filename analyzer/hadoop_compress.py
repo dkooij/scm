@@ -138,7 +138,7 @@ def clean_up_log_entries(joined_rdd):
         (file_name, log_entry) = joined_tuple
         del log_entry["File present"]  # Every file is present at this point
         del log_entry["Order index"]  # Only used to filter out false duplicates, which has already been done
-        del log_entry["Page text"]  # Can be deduced from the binary data
+        del log_entry["Page text"]  # Can be deducted from the binary data
         del log_entry["Status code"]  # Every status code is HEADLESS_SUCCESS at this point
         return file_name, log_entry
 
@@ -167,7 +167,7 @@ def save_rdd_as_pickle(output_root, day_dir, rdd):
 
 def load_compress_store_crawl_data(day_dir):
     joined_rdd = crawl_to_raw_rdd(crawl_dir, day_dir)
-    save_rdd_as_pickle(output_dir, day_dir[:8], joined_rdd)
+    save_rdd_as_pickle(output_dir, day_dir[:8] + ".pickle", joined_rdd)
 
 
 crawl_dir = "/user/s1839047/crawls"
