@@ -122,7 +122,8 @@ def filter_out_false_duplicates(joined_rdd, max_overlap=0.75):
         if prev_page_text is None:
             return True
         else:
-            return text_overlap.get_overlap_fraction(prev_page_text, page_text) <= max_overlap
+            return len(page_text) > 0 and not text_overlap.start_overlap(prev_page_text, page_text) and \
+                   text_overlap.get_overlap_fraction(page_text, prev_page_text) <= max_overlap
 
     valid_check_rdd = rdd.filter(is_valid).map(lambda row: (row["file_name"], None))
     filtered_joined_rdd = joined_rdd.join(valid_check_rdd).map(lambda t: (t[0], t[1][0]))
