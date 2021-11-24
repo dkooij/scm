@@ -1,7 +1,7 @@
 """
 Submit a batch of crawl processing jobs.
 Author: Daan Kooij
-Last modified: November 23rd, 2021
+Last modified: November 24th, 2021
 """
 
 import os
@@ -56,6 +56,6 @@ for directory in crawl_dirs:
                --executor-memory 7G \
                --archives /home/s1839047/pyspark-envs/v3.tar.gz#environment \
                --py-files get_page_text.py,text_overlap.py \
-               /home/s1839047/SCM/analyzer/hadoop_process_crawls.py " + directory)
+               /home/s1839047/SCM/analyzer/hadoop_compress.py " + directory)
 
 print("\nDone!\n")
