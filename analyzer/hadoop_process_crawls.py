@@ -9,6 +9,8 @@ from pyspark.sql import SparkSession
 import sys
 import zlib
 
+import detect_html
+from get_page_links import get_page_links
 from get_page_text import get_page_text
 
 
@@ -29,6 +31,18 @@ def extract_text(entry):
     return entry
 
 
+def extract_links(entry):
+    page_html = detect_html.get_html(entry["Binary data"])
+    if page_html:
+        internal_outlinks, external_outlinks = get_page_links(entry["URL"], page_html)
+        page_html.decompose()
+    else:
+        internal_outlinks, external_outlinks = [], []
+    entry["Internal outlinks"] = internal_outlinks
+    entry["External outlinks"] = external_outlinks
+    return entry
+
+
 def purge_binary_data(entry):
     del entry["Binary data"]
     return entry
@@ -44,6 +58,7 @@ def compute_raw_rdds(crawl_root, days):
 
 def extract_features(rdd):
     rdd = rdd.mapValues(extract_text)
+    rdd = rdd.mapValues(extract_links)
     rdd = rdd.mapValues(purge_binary_data)
     return rdd
 
@@ -56,13 +71,17 @@ def get_day_pairs(raw_rdds):
     return pair_rdds
 
 
-def compute_text_has_changed(pair_rdds):
+def compute_has_changed(pair_rdds):
     def map_tuple(entry_pair):
         entry1, entry2 = entry_pair
         day1, day2 = entry1["Day"], entry2["Day"]
         page_text1, page_text2 = entry1["Page text"], entry2["Page text"]
-        has_changed = page_text1 != page_text2
-        return day1, day2, has_changed
+        page_ilinks1, page_ilinks2 = entry1["Internal outlinks"], entry2["Internal outlinks"]
+        page_elinks1, page_elinks2 = entry1["External outlinks"], entry2["External outlinks"]
+        change_bools = (page_text1 != page_text2,
+                        page_ilinks1 != page_ilinks2,
+                        page_elinks1 != page_elinks2)
+        return day1, day2, change_bools
 
     change_rdds = []
     for pair_rdd in pair_rdds:
@@ -81,15 +100,11 @@ def save_change_rdd_as_csv(change_rdd, output_directory, output_name):
     output_path = output_directory + "/change-" + output_name
 
     def to_csv_line(rdd_entry):
-        file_name, (day1, day2, has_changed) = rdd_entry
-        return ",".join([file_name, day1, day2, str(has_changed)])
+        file_name, (day1, day2, change_bools) = rdd_entry
+        change_str = ",".join("1" if b else "0" for b in change_bools)
+        return ",".join((file_name, day1, day2, change_str))
 
     change_rdd.map(to_csv_line).saveAsTextFile(output_path)
-
-
-# crawl_dir = "/user/s1839047/crawls_test"
-# day_list = ["miniday", "miniday2"]
-# extract_dir = "/user/s1839047/extracted_test"
 
 
 crawl_dir = "/user/s1839047/crawls/data"
@@ -97,10 +112,10 @@ extract_dir = "/user/s1839047/extracted"
 
 
 def process(day1_dir, day2_dir):
-    raw_rdd_list = compute_raw_rdds(crawl_dir, [day1_dir, day2_dir])
+    raw_rdd_list = compute_raw_rdds(crawl_dir, [day1_dir + ".pickle", day2_dir + ".pickle"])
     feature_rdd_list = [extract_features(rdd) for rdd in raw_rdd_list]
     pair_rdd_list = get_day_pairs(feature_rdd_list)
-    change_rdd_list = compute_text_has_changed(pair_rdd_list)
+    change_rdd_list = compute_has_changed(pair_rdd_list)
     save_change_rdd_as_csv(change_rdd_list[0], extract_dir, day2_dir)
 
 
