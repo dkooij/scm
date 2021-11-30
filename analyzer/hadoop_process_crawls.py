@@ -6,12 +6,12 @@ Last modified: November 30th, 2021
 
 from pyspark import SparkContext
 from pyspark.sql import SparkSession
-import sys
 import zlib
 
 import detect_html
 from get_page_links import get_page_links
 from get_page_text import get_page_text
+import global_vars
 
 
 # Initialize Spark and SparkSQL context.
@@ -52,10 +52,6 @@ def get_raw_rdd(crawl_directory, day_dir):
     return sc.pickleFile(crawl_directory + "/" + day_dir).mapValues(decompress_data)
 
 
-def compute_raw_rdds(crawl_root, days):
-    return [get_raw_rdd(crawl_root, day) for day in days]
-
-
 def extract_features(rdd):
     rdd = rdd.mapValues(extract_text)
     rdd = rdd.mapValues(extract_links)
@@ -89,13 +85,6 @@ def compute_has_changed(pair_rdds):
     return change_rdds
 
 
-def combine_rdds(rdds):
-    union_rdd = rdds[0]
-    for next_rdd in rdds[1:]:
-        union_rdd = union_rdd.union(next_rdd)
-    return union_rdd
-
-
 def save_change_rdd_as_csv(change_rdd, output_directory, output_name):
     output_path = output_directory + "/change-" + output_name
 
@@ -107,20 +96,19 @@ def save_change_rdd_as_csv(change_rdd, output_directory, output_name):
     change_rdd.map(to_csv_line).saveAsTextFile(output_path)
 
 
-crawl_dir = "/user/s1839047/crawls/data"
-extract_dir = "/user/s1839047/extracted"
+def process(crawl_dir, extract_dir, days):
+    day1_rdd, day2_rdd = None, None
+    for day_dir in days:
+        day1_rdd = day2_rdd
+        day2_rdd = extract_features(get_raw_rdd(crawl_dir, day_dir + ".pickle"))
+        if day1_rdd is not None:
+            feature_rdd_list = [day1_rdd, day2_rdd]
+            pair_rdd_list = get_day_pairs(feature_rdd_list)
+            change_rdd_list = compute_has_changed(pair_rdd_list)
+            save_change_rdd_as_csv(change_rdd_list[0], extract_dir, day_dir)
 
 
-def process(day1_dir, day2_dir):
-    raw_rdd_list = compute_raw_rdds(crawl_dir, [day1_dir + ".pickle", day2_dir + ".pickle"])
-    feature_rdd_list = [extract_features(rdd) for rdd in raw_rdd_list]
-    pair_rdd_list = get_day_pairs(feature_rdd_list)
-    change_rdd_list = compute_has_changed(pair_rdd_list)
-    save_change_rdd_as_csv(change_rdd_list[0], extract_dir, day2_dir)
-
-
-if len(sys.argv) >= 3:
-    dir1, dir2 = sys.argv[1], sys.argv[2]
-    process(dir1, dir2)
-else:
-    print("Invalid usage")
+_crawl_dir = "/user/s1839047/crawls/data"
+_extract_dir = "/user/s1839047/extracted"
+_days = global_vars.DAYS
+process(_crawl_dir, _extract_dir, _days)
