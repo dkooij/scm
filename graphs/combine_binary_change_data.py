@@ -1,13 +1,13 @@
 """
 Combine binary change data into a single csv file.
 Author: Daan Kooij
-Last modified: October 11th, 2021
+Last modified: December 1st, 2021
 """
 
 import os
 
 
-BINARY_CHANGE_ROOT = "input/change-rate"
+BINARY_CHANGE_ROOT = "input/change-data"
 OUTPUT_FILE_PATH = "input/change-data-combined.csv"
 
 
@@ -26,8 +26,9 @@ def binary_change_entries():
 
 
 with open(OUTPUT_FILE_PATH, "w") as output_file:
-    for [page_id, day1, day2, changed_str] in binary_change_entries():
+    for change_entry in binary_change_entries():
+        page_id, day1, day2, change_values = change_entry[0], change_entry[1], change_entry[2], change_entry[3:]
         page_id_short = page_id.split("_")[-1]
-        changed_short = "1" if changed_str == "True" else "0"
-        output_line = page_id_short + "," + day2 + "," + changed_short
+        change_values_str = ",".join(change_values)
+        output_line = ",".join((page_id_short, day2, change_values_str))
         output_file.write(output_line + "\n")
