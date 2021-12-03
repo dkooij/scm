@@ -1,17 +1,18 @@
 """
 Read binary change data and compute binary change statistics.
 Author: Daan Kooij
-Last modified: December 1st, 2021
+Last modified: December 3rd, 2021
 """
 
 from collections import defaultdict
 from datetime import datetime
 
+import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
 
 
-INPUT_FILE_PATH = "input/change-data-combined.csv"
+INPUT_FILE_PATH = "inputmisc/change-data-combined.csv"
 FIRST_WEEK = 24
 LAST_WEEK = 35
 PLOT_LINE_WIDTH = 3.2
@@ -91,9 +92,8 @@ def draw_alluvial_plot(change_cube):
     node_labels, node_colors = [], []
 
     def get_color(color_index, opacity=1.0):
-        color_code = px.colors.qualitative.Plotly[color_index]
-        red, green, blue = color_code[1:3], color_code[3:5], color_code[5:7]
-        red, green, blue = str(int(red, 16)), str(int(green, 16)), str(int(blue, 16))
+        color_code_rgb = px.colors.qualitative.Dark2[color_index]
+        [red, green, blue] = color_code_rgb.split("(")[1].split(")")[0].split(",")
         return "rgba(" + red + "," + green + "," + blue + "," + str(opacity) + ")"
 
     for i in range(len(change_cube[0])):
@@ -134,12 +134,15 @@ def draw_alluvial_plot(change_cube):
 
 
 def draw_page_changes_per_day(changes_per_day):
-    px.line(
-        x=list(range(2, len(changes_per_day) + 2)),
-        y=changes_per_day,
-        title="Number of page changes per day",
-        labels={"x": "Day number", "y": "Pages changed"}
-    ).update_traces(line={"width": PLOT_LINE_WIDTH}).show()
+    day_numbers = list(range(2, len(changes_per_day) + 2))
+    plt.figure()
+    plt.plot(day_numbers, changes_per_day, linewidth=2.5, color=plt.cm.Dark2(0))
+    plt.title("Number of page changes per day")
+    plt.xlabel("Day number")
+    plt.ylabel("Pages changed")
+    plt.grid()
+    plt.tight_layout()
+    plt.show()
 
 
 def draw_different_change_behaviour_fractions(change_cube):
@@ -218,11 +221,11 @@ cc = {"Page text": [[[71871, 5502, 2999, 692, 415, 116, 47, 15], [5040, 2832, 16
 cpd = {"Page text": [35517, 36536, 41080, 40607, 40406, 40404, 39722, 35830, 37177, 41503, 40821, 40718, 41221, 40241, 35620, 36868, 40867, 41536, 42151, 42596, 40346, 36008, 37019, 40632, 41235, 40417, 40749, 39970, 35944, 36229, 40876, 41319, 40701, 40450, 39061, 35139, 35988, 40336, 40121, 39292, 39515, 38382, 34710, 35373, 39088, 39579, 38491, 39016, 38727, 36114, 36584, 39631, 39805, 39257, 39324, 38812, 35614, 36400, 51365, 49689, 38479, 38961, 38167, 9029, 9127, 40715, 16021, 16093, 40210, 15834, 14388, 36813, 40336, 40239, 40167, 40583, 40240, 36817, 38237, 18979, 19395, 41690, 42141, 40719, 36754, 38284, 42698, 41940, 41108], "Internal outlinks": [25718, 26050, 30383, 30795, 29985, 30026, 29500, 25615, 26525, 30684, 30532, 30369, 30427, 29786, 25462, 26533, 30024, 30649, 31326, 31232, 29560, 25807, 26434, 30327, 30399, 30023, 30313, 29296, 25657, 25959, 30309, 30849, 30429, 29853, 28733, 25334, 25799, 30038, 29626, 29101, 29399, 28131, 24780, 25506, 28901, 29144, 28600, 28670, 28188, 25910, 26010, 29388, 28790, 28669, 28840, 27886, 25386, 26126, 39547, 37849, 28270, 28432, 27507, 5537, 5685, 29897, 10757, 10751, 29384, 10613, 9246, 26417, 29466, 29599, 29618, 29940, 29253, 26247, 27702, 13045, 13462, 30973, 31147, 30170, 26428, 27536, 31526, 31250, 30774], "External outlinks": [10077, 10570, 11804, 11673, 11478, 11768, 11373, 9917, 10560, 11733, 11739, 11745, 11518, 11351, 9951, 10732, 11899, 12017, 12282, 12196, 11735, 10119, 10663, 11483, 11946, 11776, 12064, 11437, 10054, 10559, 11780, 12110, 11762, 11849, 11353, 10117, 10353, 11671, 11533, 11479, 11594, 11045, 9992, 10308, 11450, 11754, 11215, 11692, 11496, 10623, 10391, 11385, 11791, 11306, 11642, 11014, 10258, 10724, 17488, 16461, 11076, 11278, 11021, 3253, 3209, 12189, 5280, 5221, 11584, 5232, 4773, 10762, 11849, 11579, 11521, 11766, 11354, 10520, 10818, 6066, 6248, 12081, 12444, 11866, 10588, 10935, 12350, 12412, 12088]}
 
 draw_alluvial_plot(cc["Page text"])
-draw_alluvial_plot(cc["Internal outlinks"])
-draw_alluvial_plot(cc["External outlinks"])
+# draw_alluvial_plot(cc["Internal outlinks"])
+# draw_alluvial_plot(cc["External outlinks"])
 
 draw_page_changes_per_day(cpd["Page text"])
-draw_different_change_behaviour_fractions(cc["Page text"])
-draw_same_change_behaviour_fractions(cc["Page text"])
-draw_fraction_not_changed_weekly(cm["Page text"])
-draw_fraction_changed_every_day_weekly(cm["Page text"])
+# draw_different_change_behaviour_fractions(cc["Page text"])
+# draw_same_change_behaviour_fractions(cc["Page text"])
+# draw_fraction_not_changed_weekly(cm["Page text"])
+# draw_fraction_changed_every_day_weekly(cm["Page text"])
