@@ -1,7 +1,7 @@
 """
 Read feature change data and compute feature change statistics.
 Author: Daan Kooij
-Last modified: November 22nd, 2021
+Last modified: December 3rd, 2021
 """
 
 import ast
@@ -108,7 +108,7 @@ def plot_change_fractions(change_fractions):
     plt.xticks(rotation=90)
     plt.grid()
     plt.tight_layout()
-    plt.savefig("figures/change-fractions.png", dpi=400)
+    plt.savefig("figures/change/change-fractions.png", dpi=400)
     print(" * plotted change fractions")
 
 
@@ -119,7 +119,7 @@ def plot_informative_tuple(informative_tuple):
             colors=plt.cm.Dark2.colors)
     plt.title("Fraction of changed pages for which page changes are likely informative")
     plt.tight_layout()
-    plt.savefig("figures/informative-pie.png", dpi=400)
+    plt.savefig("figures/change/informative-pie.png", dpi=400)
     print(" * plotted informative tuple")
 
 
@@ -134,7 +134,7 @@ def plot_change_amplitudes(fractions):
     plt.xticks(rotation=90)
     plt.grid()
     plt.tight_layout()
-    plt.savefig("figures/change-amplitudes.png", dpi=400)
+    plt.savefig("figures/change/change-amplitudes.png", dpi=400)
     print(" * plotted change amplitudes")
 
 
@@ -151,7 +151,7 @@ def plot_change_amplitude_percentile(fractions_lists):
     fig.suptitle("Change amplitude percentile plots per feature")
     plt.tight_layout()
 
-    plt.savefig("figures/change-amplitudes-percentile.png", dpi=400)
+    plt.savefig("figures/change/change-amplitudes-percentile.png", dpi=400)
     print(" * plotted change amplitudes percentile curve")
 
 
@@ -164,7 +164,7 @@ def plot_text_change_categories(categories_list):
     plt.xticks(rotation=90)
     plt.grid()
     plt.tight_layout()
-    plt.savefig("figures/text-change-categories.png", dpi=400)
+    plt.savefig("figures/change/text-change-categories.png", dpi=400)
     print(" * plotted text change categories")
 
 
