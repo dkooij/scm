@@ -7,8 +7,8 @@ Last modified: December 1st, 2021
 import os
 
 
-BINARY_CHANGE_ROOT = "input/change-data"
-OUTPUT_FILE_PATH = "input/change-data-combined.csv"
+BINARY_CHANGE_ROOT = "inputmisc/change-data"
+OUTPUT_FILE_PATH = "inputmisc/change-data-combined.csv"
 
 
 def binary_change_entries():
