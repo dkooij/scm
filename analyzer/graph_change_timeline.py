@@ -135,6 +135,7 @@ def draw_alluvial_plot(change_cube):
 
 def draw_page_changes_per_day(changes_per_day):
     day_numbers = list(range(2, len(changes_per_day) + 2))
+
     plt.figure()
     plt.plot(day_numbers, changes_per_day, linewidth=2.5, color=plt.cm.Dark2(0))
     plt.title("Number of page changes per day")
@@ -142,10 +143,11 @@ def draw_page_changes_per_day(changes_per_day):
     plt.ylabel("Pages changed")
     plt.grid()
     plt.tight_layout()
-    plt.show()
+    plt.savefig("figures/timeline/changes-per-day.png", dpi=400)
 
 
 def draw_different_change_behaviour_fractions(change_cube):
+    week_numbers = list(range(FIRST_WEEK + 1, LAST_WEEK + 1))
     fractions = []  # Percentage of pages that exhibit different change behaviour in following week, per week
     for change_matrix in change_cube:
         week_same, total = 0, 0
@@ -155,17 +157,20 @@ def draw_different_change_behaviour_fractions(change_cube):
         week_different = total - week_same
         fractions.append(week_different / total)
 
-    px.line(
-        x=list(range(FIRST_WEEK + 1, LAST_WEEK + 1)),
-        y=fractions,
-        title="Percentage of pages that exhibit different change behaviour in following week, per week",
-        labels={"x": "Week number", "y": "Fraction"}
-    ).update_traces(line={"width": PLOT_LINE_WIDTH}).show()
+    plt.figure()
+    plt.plot(week_numbers, fractions, linewidth=2.5, color=plt.cm.Dark2(0))
+    plt.title("Percentage of pages that exhibit different change behaviour in following week, per week")
+    plt.xlabel("Week number")
+    plt.ylabel("Fraction")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig("figures/timeline/weekly-different-change-behaviour.png", dpi=400)
 
 
 def draw_same_change_behaviour_fractions(change_cube):
     # Percentage of pages that continue to exhibit same change behaviour
     # in following week, per change behaviour per week
+    week_numbers = list(range(FIRST_WEEK + 1, LAST_WEEK + 1))
     fractions_per_change_behaviour = [[] for _ in range(len(change_cube[0]))]
     for change_matrix in change_cube:
         for i in range(len(change_matrix)):
@@ -173,42 +178,47 @@ def draw_same_change_behaviour_fractions(change_cube):
             week_cb_total = sum(change_matrix[i])
             fractions_per_change_behaviour[i].append(week_cb_same / week_cb_total)
 
-    figure = px.line(
-        x=list(range(FIRST_WEEK + 1, LAST_WEEK + 1)),
-        y=fractions_per_change_behaviour,
-        title="Percentage of pages that continue to exhibit same change behaviour "
-              "in following week, per change behaviour per week",
-        labels={"x": "Week number", "value": "Fraction",
-                "variable": "Changes per week"},
-    ).update_traces(line={"width": PLOT_LINE_WIDTH})
-    legend_names = {"wide_variable_0": "0", "wide_variable_1": "1", "wide_variable_2": "2", "wide_variable_3": "3",
-                    "wide_variable_4": "4", "wide_variable_5": "5", "wide_variable_6": "6", "wide_variable_7": "7"}
-    figure.for_each_trace(lambda t: t.update(name=legend_names[t.name],
-                                             legendgroup=legend_names[t.name],
-                                             hovertemplate=t.hovertemplate.replace(t.name, legend_names[t.name])))
-    figure.show()
+    plt.figure()
+    for i, fractions_list in zip(range(len(fractions_per_change_behaviour)), fractions_per_change_behaviour):
+        plt.plot(week_numbers, fractions_list, linewidth=2.5, color=plt.cm.Dark2(i), label=str(i))
+    plt.title("Percentage of pages that continue to exhibit same change behaviour "
+              "in following week, per change behaviour per week")
+    plt.xlabel("Week number")
+    plt.ylabel("Fraction")
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig("figures/timeline/weekly-same-change-behaviour.png", dpi=400)
 
 
 def draw_fraction_not_changed_weekly(change_matrix):
     # Fraction of pages not changed, per week
+    week_numbers = list(range(FIRST_WEEK, LAST_WEEK + 1))
     fractions_not_changed = [week_changes[0] / sum(week_changes) for week_changes in change_matrix]
-    px.line(
-        x=list(range(FIRST_WEEK, LAST_WEEK + 1)),
-        y=fractions_not_changed,
-        title="Fraction of pages not changed, per week",
-        labels={"x": "Week number", "y": "Fraction"}
-    ).update_traces(line={"width": PLOT_LINE_WIDTH}).show()
+
+    plt.figure()
+    plt.plot(week_numbers, fractions_not_changed, linewidth=2.5, color=plt.cm.Dark2(0))
+    plt.title("Fraction of pages not changed, per week")
+    plt.xlabel("Week number")
+    plt.ylabel("Fraction")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig("figures/timeline/weekly-fraction-not-changed.png", dpi=400)
 
 
 def draw_fraction_changed_every_day_weekly(change_matrix):
     # Fraction of pages changed every day, per week
+    week_numbers = list(range(FIRST_WEEK, LAST_WEEK + 1))
     fraction_always_changed = [week_changes[-1] / sum(week_changes) for week_changes in change_matrix]
-    px.line(
-        x=list(range(FIRST_WEEK, LAST_WEEK + 1)),
-        y=fraction_always_changed,
-        title="Fraction of pages changed every day, per week",
-        labels={"x": "Week number", "y": "Fraction"}
-    ).update_traces(line={"width": PLOT_LINE_WIDTH}).show()
+
+    plt.figure()
+    plt.plot(week_numbers, fraction_always_changed, linewidth=2.5, color=plt.cm.Dark2(0))
+    plt.title("Fraction of pages changed every day, per week")
+    plt.xlabel("Week number")
+    plt.ylabel("Fraction")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig("figures/timeline/weekly-fraction-always-changed.png", dpi=400)
 
 
 # cd = compute_change_dicts()
@@ -225,7 +235,7 @@ draw_alluvial_plot(cc["Page text"])
 # draw_alluvial_plot(cc["External outlinks"])
 
 draw_page_changes_per_day(cpd["Page text"])
-# draw_different_change_behaviour_fractions(cc["Page text"])
-# draw_same_change_behaviour_fractions(cc["Page text"])
-# draw_fraction_not_changed_weekly(cm["Page text"])
-# draw_fraction_changed_every_day_weekly(cm["Page text"])
+draw_different_change_behaviour_fractions(cc["Page text"])
+draw_same_change_behaviour_fractions(cc["Page text"])
+draw_fraction_not_changed_weekly(cm["Page text"])
+draw_fraction_changed_every_day_weekly(cm["Page text"])
