@@ -1,7 +1,7 @@
 """
 Read binary change data and compute binary change statistics.
 Author: Daan Kooij
-Last modified: December 7th, 2021
+Last modified: December 8th, 2021
 """
 
 from collections import defaultdict
@@ -170,7 +170,7 @@ def draw_alluvial_plot(change_cube):
     fig.show()
 
 
-def draw_page_changes_per_day(changes_per_day, plot_multiple=False):
+def draw_page_changes_per_day(changes_per_day, plot_multiple=False, corrected_dataset=False):
     day_numbers = list(range(2, len(changes_per_day["Page text"]) + 2))
 
     plt.figure()
@@ -180,11 +180,12 @@ def draw_page_changes_per_day(changes_per_day, plot_multiple=False):
                  linewidth=2.5, color=plt.cm.Dark2(1))
         plt.plot(day_numbers, changes_per_day["External outlinks"], label="External out-links",
                  linewidth=2.5, color=plt.cm.Dark2(2))
-        plt.title("Fraction of pages per day for which a given feature changes\n"
-                  "(corrected dataset)")
+        title = "Fraction of pages per day for which a given feature changes\n"
         plt.legend()
     else:
-        plt.title("Fraction of pages per day for which text changes (full dataset)")
+        title = "Fraction of pages per day for which text changes "
+    title += "(corrected dataset)" if corrected_dataset else "(full dataset)"
+    plt.title(title)
     plt.xlabel("Day number")
     plt.ylabel("Fraction changed")
     plt.grid()
@@ -193,6 +194,17 @@ def draw_page_changes_per_day(changes_per_day, plot_multiple=False):
         plt.savefig("figures/timeline/changes-per-day-multiple.png", dpi=400)
     else:
         plt.savefig("figures/timeline/changes-per-day.png", dpi=400)
+
+
+def draw_rare_page_changes(rare_page_changes):
+    plt.figure()
+    plt.plot(list(range(2, len(rare_page_changes) + 2)), rare_page_changes, linewidth=2.5, color=plt.cm.Dark2(0))
+    plt.title("Number of rare page changes per day")
+    plt.xlabel("Day number")
+    plt.ylabel("Rare page changes")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig("figures/timeline/rare-page-changes.png", dpi=400)
 
 
 def draw_different_change_behaviour_fractions(change_cube):
@@ -291,15 +303,16 @@ cpd0 = {"Page text": [9089, 9014, 10104, 10130, 10112, 10156, 10073, 9061, 9138,
 cm, cc, cpd = normalize_results(cm, cc, cpd)
 cm0, cc0, cpd0 = normalize_results(cm0, cc0, cpd0)
 
-cpp, pcpd = compute_changes_per_page()
-rc = compute_rare_changes(cpp, pcpd)
+# cpp, pcpd = compute_changes_per_page()
+# rpc = compute_rare_changes(cpp, pcpd)
 
 # draw_alluvial_plot(cc0["Page text"])
 # draw_alluvial_plot(cc0["Internal outlinks"])
 # draw_alluvial_plot(cc0["External outlinks"])
 
 # draw_page_changes_per_day(cpd)
-# draw_page_changes_per_day(cpd0, plot_multiple=True)
+# draw_page_changes_per_day(cpd0, plot_multiple=True, corrected_dataset=True)
+# draw_rare_page_changes(rpc)
 # draw_different_change_behaviour_fractions(cc0["Page text"])
 # draw_same_change_behaviour_fractions(cc0["Page text"])
 # draw_fraction_not_changed_weekly(cm0["Page text"])
