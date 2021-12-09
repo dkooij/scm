@@ -1,7 +1,7 @@
 """
 Read feature change data and compute feature change statistics.
 Author: Daan Kooij
-Last modified: December 3rd, 2021
+Last modified: December 9th, 2021
 """
 
 import ast
@@ -144,7 +144,7 @@ def plot_change_amplitude_percentile(fractions_lists):
     for name, (y_ins, y_del) in fractions_lists:
         plot_index += 1
         ax = fig.add_subplot(3, 3, plot_index)
-        x = np.linspace(0, 1, num=len(y_ins))
+        x = np.linspace(0, 100, num=len(y_ins))
         ax.plot(x, y_del, color=plt.cm.Dark2(1), linewidth=2.5, label="del")
         ax.plot(x, y_ins, color=plt.cm.Dark2(0), linewidth=2.5, label="ins")
         ax.set_title(name)
