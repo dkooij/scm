@@ -501,9 +501,10 @@ cpd0_sun = {"Page text": [9014, 9138, 9047, 9116, 9063, 8863, 8799, 9087, 8994, 
 cpd0_tue = {"Page text": [10112, 10162, 10571, 10051, 10029, 9836, 9652, 9727, 9485, 10133, 10230, 10837, 10460], "Internal outlinks": [6689, 6624, 6999, 6550, 6778, 6356, 6213, 6138, 6102, 6530, 6569, 7307, 6948], "External outlinks": [3600, 3502, 3661, 3536, 3510, 3537, 3442, 3452, 3391, 3477, 3514, 3727, 3598]}
 
 cm, cc, cpd = normalize_results(cm, cc, cpd)
+cm0_backup = cm0
 cm0, cc0, cpd0 = normalize_results(cm0, cc0, cpd0)
-_, _, cpd0_sun = normalize_results(cm0, cc0, cpd0_sun)
-_, _, cpd0_tue = normalize_results(cm0, cc0, cpd0_tue)
+_, _, cpd0_sun = normalize_results(cm0_backup, cc0, cpd0_sun)
+_, _, cpd0_tue = normalize_results(cm0_backup, cc0, cpd0_tue)
 
 # cpp, pcpd = compute_changes_per_page()
 # rpc = compute_rare_changes(cpp, pcpd)
