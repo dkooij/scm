@@ -215,6 +215,39 @@ def draw_average_change_behaviour_fractions(average_change_behaviour, change_typ
     fig.savefig("figures/timeline/average-change-behaviour-" + change_type + ".png", dpi=400)
 
 
+def draw_change_behaviour_per_week(change_matrix):
+    num_behaviours = len(change_matrix[0])
+    fig, (ax_top, ax_bot) = plt.subplots(2, 1, sharex=True)
+    for j in range(num_behaviours):
+        x = [i + j * 0.11 + 0.615 for i in range(len(change_matrix))]
+        y = [change_matrix[i][j] for i in range(len(change_matrix))]
+        ax_top.bar(x, y, width=0.11, label=str(j), color=plt.cm.Dark2(j))
+        ax_bot.bar(x, y, width=0.11, color=plt.cm.Dark2(j))
+    ax_top.set_ylim(0.54, 0.66)
+    ax_bot.set_ylim(0, 0.12)
+    ax_top.set_xlim(0, 13.65)
+    ax_bot.set_xlim(0, 13.65)
+    ax_top.spines["bottom"].set_visible(False)
+    ax_bot.spines["top"].set_visible(False)
+    ax_top.xaxis.tick_top()
+
+    # Set interruption diagonal lines
+    d = .015  # how big to make the diagonal lines in axes coordinates
+    kwargs = dict(transform=ax_top.transAxes, color='k', clip_on=False)
+    ax_top.plot((-d, +d), (-d, +d), **kwargs)  # top-left diagonal
+    ax_top.plot((1 - d, 1 + d), (-d, +d), **kwargs)  # top-right diagonal
+    kwargs.update(transform=ax_bot.transAxes)  # switch to the bottom axes
+    ax_bot.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
+    ax_bot.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # bottom-right diagonal
+
+    ax_top.set_title("Change behaviour fractions per week")
+    ax_top.legend()
+    plt.xlabel("Week")
+    plt.ylabel("Change behaviour fraction")
+    plt.tight_layout()
+    plt.savefig("figures/timeline/weekly-change-behaviour.png", dpi=400)
+
+
 def draw_page_changes_per_day(changes_per_day, plot_multiple=False, corrected_dataset=False):
     day_numbers = list(range(2, len(changes_per_day["Page text"]) + 2))
 
@@ -408,9 +441,9 @@ acb = compute_average_change_behaviour(cm0)
 # draw_alluvial_plot(cc0["Page text"], "page text")
 # draw_alluvial_plot(cc0["Internal outlinks"], "internal out-links")
 # draw_alluvial_plot(cc0["External outlinks"], "external out-links")
-draw_average_change_behaviour_fractions(acb, "text")
-draw_average_change_behaviour_fractions(acb, "other")
-
+# draw_average_change_behaviour_fractions(acb, "text")
+# draw_average_change_behaviour_fractions(acb, "other")
+# draw_change_behaviour_per_week(cm0["Page text"])
 
 # draw_different_change_behaviour_fractions(cc0["Page text"])
 # draw_same_change_behaviour_fractions(cc0["Page text"])
