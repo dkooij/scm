@@ -347,8 +347,8 @@ def draw_same_change_behaviour_fractions(change_cube):
     plt.figure()
     for i, fractions_list in zip(range(len(fractions_per_change_behaviour)), fractions_per_change_behaviour):
         plt.plot(week_numbers, fractions_list, linewidth=2.5, color=plt.cm.Dark2(i), label=str(i))
-    plt.title("Fraction of pages that continue to exhibit same change\n"
-              "behaviour in following week, per change behaviour per week")
+    plt.title("Fraction of pages that continue to exhibit\n"
+              "same change behaviour as previous week")
     plt.xlabel("Week number")
     plt.ylabel("Fraction")
     plt.legend()
