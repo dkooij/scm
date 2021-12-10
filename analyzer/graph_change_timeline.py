@@ -333,6 +333,30 @@ def draw_change_behaviour_per_week(change_matrix):
     plt.savefig("figures/timeline/weekly-change-behaviour.png", dpi=400)
 
 
+def draw_same_change_behaviour_fractions(change_cube):
+    # Percentage of pages that continue to exhibit same change behaviour
+    # in following week, per change behaviour per week
+    week_numbers = list(range(FIRST_WEEK + 1, LAST_WEEK + 1))
+    fractions_per_change_behaviour = [[] for _ in range(len(change_cube[0]))]
+    for change_matrix in change_cube:
+        for i in range(len(change_matrix)):
+            week_cb_same = change_matrix[i][i]
+            week_cb_total = sum(change_matrix[i])
+            fractions_per_change_behaviour[i].append(week_cb_same / week_cb_total)
+
+    plt.figure()
+    for i, fractions_list in zip(range(len(fractions_per_change_behaviour)), fractions_per_change_behaviour):
+        plt.plot(week_numbers, fractions_list, linewidth=2.5, color=plt.cm.Dark2(i), label=str(i))
+    plt.title("Fraction of pages that continue to exhibit same change\n"
+              "behaviour in following week, per change behaviour per week")
+    plt.xlabel("Week number")
+    plt.ylabel("Fraction")
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig("figures/timeline/weekly-same-change-behaviour.png", dpi=400)
+
+
 def draw_different_change_behaviour_fractions(change_cube):
     week_numbers = list(range(FIRST_WEEK + 1, LAST_WEEK + 1))
     fractions = []  # Percentage of pages that exhibit different change behaviour in following week, per week
@@ -352,30 +376,6 @@ def draw_different_change_behaviour_fractions(change_cube):
     plt.grid()
     plt.tight_layout()
     plt.savefig("figures/timeline/weekly-different-change-behaviour.png", dpi=400)
-
-
-def draw_same_change_behaviour_fractions(change_cube):
-    # Percentage of pages that continue to exhibit same change behaviour
-    # in following week, per change behaviour per week
-    week_numbers = list(range(FIRST_WEEK + 1, LAST_WEEK + 1))
-    fractions_per_change_behaviour = [[] for _ in range(len(change_cube[0]))]
-    for change_matrix in change_cube:
-        for i in range(len(change_matrix)):
-            week_cb_same = change_matrix[i][i]
-            week_cb_total = sum(change_matrix[i])
-            fractions_per_change_behaviour[i].append(week_cb_same / week_cb_total)
-
-    plt.figure()
-    for i, fractions_list in zip(range(len(fractions_per_change_behaviour)), fractions_per_change_behaviour):
-        plt.plot(week_numbers, fractions_list, linewidth=2.5, color=plt.cm.Dark2(i), label=str(i))
-    plt.title("Percentage of pages that continue to exhibit same change behaviour "
-              "in following week, per change behaviour per week")
-    plt.xlabel("Week number")
-    plt.ylabel("Fraction")
-    plt.legend()
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig("figures/timeline/weekly-same-change-behaviour.png", dpi=400)
 
 
 def draw_fraction_not_changed_weekly(change_matrix):
@@ -455,9 +455,9 @@ acb = compute_average_change_behaviour(cm0)
 # draw_average_change_behaviour_fractions(acb, "text")
 # draw_average_change_behaviour_fractions(acb, "other")
 # draw_change_behaviour_per_week(cm0["Page text"])
+# draw_same_change_behaviour_fractions(cc0["Page text"])
 
 
 # draw_different_change_behaviour_fractions(cc0["Page text"])
-# draw_same_change_behaviour_fractions(cc0["Page text"])
 # draw_fraction_not_changed_weekly(cm0["Page text"])
 # draw_fraction_changed_every_day_weekly(cm0["Page text"])
