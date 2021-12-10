@@ -174,9 +174,9 @@ def draw_page_changes_per_day(changes_per_day, plot_multiple=False, corrected_da
     plt.grid()
     plt.tight_layout()
     if plot_multiple:
-        plt.savefig("figures/timeline/changes-per-day-multiple.png", dpi=400)
+        plt.savefig("figures/timeline/daily-changes-corrected.png", dpi=400)
     else:
-        plt.savefig("figures/timeline/changes-per-day.png", dpi=400)
+        plt.savefig("figures/timeline/daily-changes-full.png", dpi=400)
 
 
 def draw_rare_page_changes(rare_page_changes):
@@ -187,7 +187,7 @@ def draw_rare_page_changes(rare_page_changes):
     plt.ylabel("Rare page changes")
     plt.grid()
     plt.tight_layout()
-    plt.savefig("figures/timeline/rare-page-changes.png", dpi=400)
+    plt.savefig("figures/timeline/daily-rare-changes.png", dpi=400)
 
 
 def draw_day_change_fractions_percentile(page_change_counts):
@@ -199,7 +199,7 @@ def draw_day_change_fractions_percentile(page_change_counts):
     plt.ylabel("Fraction of days changed")
     plt.grid()
     plt.tight_layout()
-    plt.savefig("figures/timeline/day-change-fractions-percentile.png", dpi=400)
+    plt.savefig("figures/timeline/daily-change-fractions-percentile.png", dpi=400)
 
 
 def draw_page_changes_per_single_day(sunday_changes, tuesday_changes):
@@ -224,7 +224,7 @@ def draw_page_changes_per_single_day(sunday_changes, tuesday_changes):
     plt.legend()
     plt.grid()
     plt.tight_layout()
-    plt.savefig("figures/timeline/changes-per-single-day.png", dpi=400)
+    plt.savefig("figures/timeline/daily-single-day-changes.png", dpi=400)
 
 
 # WEEKLY CHANGE PLOT FUNCTIONS
@@ -297,7 +297,7 @@ def draw_average_change_behaviour_fractions(average_change_behaviour, change_typ
     fig.suptitle("Average change behaviour across all weeks")
     fig.tight_layout()
 
-    fig.savefig("figures/timeline/average-change-behaviour-" + change_type + ".png", dpi=400)
+    fig.savefig("figures/timeline/weekly-average-change-behaviour-" + change_type + ".png", dpi=400)
 
 
 def draw_change_behaviour_per_week(change_matrix):
@@ -359,26 +359,25 @@ def draw_same_change_behaviour_fractions(change_cube):
     plt.savefig("figures/timeline/weekly-same-change-behaviour.png", dpi=400)
 
 
-def draw_different_change_behaviour_fractions(change_cube):
+def draw_same_change_behaviour_fractions_combined(change_cube):
     week_numbers = list(range(FIRST_WEEK + 1, LAST_WEEK + 1))
-    fractions = []  # Percentage of pages that exhibit different change behaviour in following week, per week
+    fractions = []  # Percentage of pages that exhibit same change behaviour in following week, per week
     for change_matrix in change_cube:
         week_same, total = 0, 0
         for i in range(len(change_matrix)):
             week_same += change_matrix[i][i]
             total += sum(change_matrix[i])
-        week_different = total - week_same
-        fractions.append(week_different / total)
+        fractions.append(week_same / total)
 
     plt.figure()
     plt.plot(week_numbers, fractions, linewidth=2.5, color=plt.cm.Dark2(0))
-    plt.title("Fraction of pages that exhibit different\n"
-              "change behaviour compared to previous week")
+    plt.title("Fraction of pages that exhibit same change behaviour\n"
+              "as previous week (with change behaviours combined)")
     plt.xlabel("Week number")
     plt.ylabel("Fraction")
     plt.grid()
     plt.tight_layout()
-    plt.savefig("figures/timeline/weekly-different-change-behaviour.png", dpi=400)
+    plt.savefig("figures/timeline/weekly-same-change-behaviour-combined.png", dpi=400)
 
 
 def draw_neighbouring_change_behaviour_fractions(change_cube):
@@ -413,6 +412,10 @@ def draw_neighbouring_change_behaviour_fractions(change_cube):
 # cc = compute_change_cube(cd)
 # cpd = compute_page_changes_per_day()
 
+# cpd0 = compute_page_changes_per_day(only_first_stage=True)
+# cpd0_sun = compute_page_changes_per_day(only_first_stage=True, limit_weekday=6)
+# cpd0_tue = compute_page_changes_per_day(only_first_stage=True, limit_weekday=2)
+
 # cd0 = compute_change_dicts(only_first_stage=True)
 # cm0 = compute_changes_per_week(cd0)
 # cc0 = compute_change_cube(cd0)
@@ -431,10 +434,6 @@ cm0, cc0, cpd0 = normalize_results(cm0, cc0, cpd0)
 _, _, cpd0_sun = normalize_results(cm0, cc0, cpd0_sun)
 _, _, cpd0_tue = normalize_results(cm0, cc0, cpd0_tue)
 
-# cpd0 = compute_page_changes_per_day(only_first_stage=True)
-# cpd0_sun = compute_page_changes_per_day(only_first_stage=True, limit_weekday=6)
-# cpd0_tue = compute_page_changes_per_day(only_first_stage=True, limit_weekday=2)
-
 # cpp, pcpd = compute_changes_per_page()
 # rpc = compute_rare_changes(cpp, pcpd)
 # dcf = compute_day_change_fractions(cpp)
@@ -449,13 +448,15 @@ _, _, cpd0_tue = normalize_results(cm0, cc0, cpd0_tue)
 # draw_page_changes_per_day(cpd0, plot_multiple=True, corrected_dataset=True)
 # draw_page_changes_per_single_day(cpd0_sun, cpd0_tue)
 
-# WEEKLY CHANGES PLOTS
+# WEEKLY CHANGES PLOTS ALLUVIAL
 # draw_alluvial_plot(cc0["Page text"], "page text")
 # draw_alluvial_plot(cc0["Internal outlinks"], "internal out-links")
 # draw_alluvial_plot(cc0["External outlinks"], "external out-links")
+
+# WEEKLY CHANGES PLOTS OTHERS
 # draw_average_change_behaviour_fractions(acb, "text")
 # draw_average_change_behaviour_fractions(acb, "other")
 # draw_change_behaviour_per_week(cm0["Page text"])
 # draw_same_change_behaviour_fractions(cc0["Page text"])
-# draw_different_change_behaviour_fractions(cc0["Page text"])
+# draw_same_change_behaviour_fractions_combined(cc0["Page text"])
 # draw_neighbouring_change_behaviour_fractions(cc0["Page text"])
