@@ -1,7 +1,7 @@
 """
 Read binary change data and compute binary change statistics.
 Author: Daan Kooij
-Last modified: December 9th, 2021
+Last modified: December 10th, 2021
 """
 
 from collections import defaultdict
@@ -17,7 +17,6 @@ INPUT_FILE_PATH = "inputmisc/change-data-combined.csv"
 NUMBER_OF_DAY_PAIRS = 89
 FIRST_WEEK = 24
 LAST_WEEK = 35
-PLOT_LINE_WIDTH = 3.2
 
 
 def compute_change_dicts(only_first_stage=False):
@@ -247,7 +246,7 @@ def draw_page_changes_per_single_day(sunday_changes, tuesday_changes):
              linewidth=2.5, color=plt.cm.Dark2(4))
     plt.plot(day_numbers, sunday_changes["External outlinks"], label="External out-links (Sunday)",
              linewidth=2.5, color=plt.cm.Dark2(5))
-    plt.title("Fraction of pages per day for which a given feature changes")
+    plt.title("Fraction of pages per single day for which a given feature changes")
     plt.xlabel("Day occurrence")
     plt.ylabel("Fraction changed")
     plt.legend()
