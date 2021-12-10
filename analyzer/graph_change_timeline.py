@@ -124,6 +124,18 @@ def compute_day_change_fractions(changes_per_page):
     return [c / NUMBER_OF_DAY_PAIRS for c in sorted(list(changes_per_page.values()), reverse=True)]
 
 
+def compute_average_change_behaviour(change_matrices):
+    num_pages = sum(change_matrices["Page text"][0])
+    result_dict = dict()
+    for feature_id, change_matrix in change_matrices.items():
+        result_dict[feature_id] = [0 for _ in range(len(change_matrix[0]))]
+        for change_list in change_matrix:
+            for index, change_value in zip(range(len(change_list)), change_list):
+                result_dict[feature_id][index] += change_value
+        result_dict[feature_id] = [value / (len(change_matrix) * num_pages) for value in result_dict[feature_id]]
+    return result_dict
+
+
 def normalize_results(cm_dict, cc_dict, cpd_dict):
     new_cm_dict, new_cc_dict, new_cpd_dict = dict(), dict(), dict()
     number_of_pages = sum(cm_dict["Page text"][0])
@@ -179,6 +191,28 @@ def draw_alluvial_plot(change_cube, change_type):
     fig.update_layout(title_text="Alluvial Plot depicting the number of days that " + change_type +
                                  " on pages in the Dutch Web changes per week, in weeks 24-35 of 2021")
     fig.show()
+
+
+def draw_average_change_behaviour_fractions(average_change_behaviour, change_type="other"):
+    fig = plt.figure(figsize=(6.4, 3.2 * (1.5 if change_type == "text" else 1)))
+    if change_type == "text":
+        change_behaviour_dict = {"Page text": average_change_behaviour["Page text"]}
+    else:
+        change_behaviour_dict = {"Internal outlinks": average_change_behaviour["Internal outlinks"],
+                                 "External outlinks": average_change_behaviour["External outlinks"]}
+
+    for plot_index, (feature_id, average_change_values) in zip(range(1, len(change_behaviour_dict) + 1),
+                                                               change_behaviour_dict.items()):
+        labels = [str(i) for i in range(len(average_change_values))]
+        ax = fig.add_subplot(1, len(change_behaviour_dict), plot_index)
+        ax.pie(average_change_values, normalize=True, startangle=90, counterclock=False,
+                colors=plt.cm.Dark2.colors)
+        ax.legend(labels)
+        ax.set_title(feature_id)
+    fig.suptitle("Average change behaviour across all weeks")
+    fig.tight_layout()
+
+    fig.savefig("figures/timeline/average-change-behaviour-" + change_type + ".png", dpi=400)
 
 
 def draw_page_changes_per_day(changes_per_day, plot_multiple=False, corrected_dataset=False):
@@ -361,6 +395,8 @@ cm0, cc0, cpd0 = normalize_results(cm0, cc0, cpd0)
 _, _, cpd0_sun = normalize_results(cm0, cc0, cpd0_sun)
 _, _, cpd0_tue = normalize_results(cm0, cc0, cpd0_tue)
 
+acb = compute_average_change_behaviour(cm0)
+
 # DAILY CHANGES PLOTS
 # draw_page_changes_per_day(cpd)
 # draw_rare_page_changes(rpc)
@@ -372,6 +408,8 @@ _, _, cpd0_tue = normalize_results(cm0, cc0, cpd0_tue)
 # draw_alluvial_plot(cc0["Page text"], "page text")
 # draw_alluvial_plot(cc0["Internal outlinks"], "internal out-links")
 # draw_alluvial_plot(cc0["External outlinks"], "external out-links")
+draw_average_change_behaviour_fractions(acb, "text")
+draw_average_change_behaviour_fractions(acb, "other")
 
 
 # draw_different_change_behaviour_fractions(cc0["Page text"])
