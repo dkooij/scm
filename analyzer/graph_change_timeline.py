@@ -19,6 +19,8 @@ FIRST_WEEK = 24
 LAST_WEEK = 35
 
 
+# COMMON DATA COMPUTATION FUNCTIONS
+
 def compute_change_dicts(only_first_stage=False):
     # change_dict: {change_type -> {page_id -> {week -> number_of_changes}}}
     change_dicts = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
@@ -109,6 +111,8 @@ def compute_changes_per_page(only_first_stage=False):
     return changes_per_page, pages_changed_per_day
 
 
+# DATA TRANSFORMATION COMPUTATION FUNCTIONS
+
 def compute_rare_changes(changes_per_page, pages_changed_per_day, threshold_fraction=0.1):
     rare_page_changes = set(page_id for page_id, changes in changes_per_page.items()
                             if changes < NUMBER_OF_DAY_PAIRS * threshold_fraction)
@@ -146,6 +150,84 @@ def normalize_results(cm_dict, cc_dict, cpd_dict):
         new_cpd_dict[key] = [cell / number_of_pages for cell in changes_per_day]
     return new_cm_dict, new_cc_dict, new_cpd_dict
 
+
+# DAILY CHANGE PLOT FUNCTIONS
+
+def draw_page_changes_per_day(changes_per_day, plot_multiple=False, corrected_dataset=False):
+    day_numbers = list(range(2, len(changes_per_day["Page text"]) + 2))
+
+    plt.figure()
+    plt.plot(day_numbers, changes_per_day["Page text"], label="Page text", linewidth=2.5, color=plt.cm.Dark2(0))
+    if plot_multiple:
+        plt.plot(day_numbers, changes_per_day["Internal outlinks"], label="Internal out-links",
+                 linewidth=2.5, color=plt.cm.Dark2(1))
+        plt.plot(day_numbers, changes_per_day["External outlinks"], label="External out-links",
+                 linewidth=2.5, color=plt.cm.Dark2(2))
+        title = "Fraction of pages per day for which a given feature changes\n"
+        plt.legend()
+    else:
+        title = "Fraction of pages per day for which text changes "
+    title += "(corrected dataset)" if corrected_dataset else "(full dataset)"
+    plt.title(title)
+    plt.xlabel("Day number")
+    plt.ylabel("Fraction changed")
+    plt.grid()
+    plt.tight_layout()
+    if plot_multiple:
+        plt.savefig("figures/timeline/changes-per-day-multiple.png", dpi=400)
+    else:
+        plt.savefig("figures/timeline/changes-per-day.png", dpi=400)
+
+
+def draw_rare_page_changes(rare_page_changes):
+    plt.figure()
+    plt.plot(list(range(2, len(rare_page_changes) + 2)), rare_page_changes, linewidth=2.5, color=plt.cm.Dark2(0))
+    plt.title("Number of rare page changes per day")
+    plt.xlabel("Day number")
+    plt.ylabel("Rare page changes")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig("figures/timeline/rare-page-changes.png", dpi=400)
+
+
+def draw_day_change_fractions_percentile(page_change_counts):
+    plt.figure()
+    x = np.linspace(0, 100, num=len(page_change_counts))
+    plt.plot(x, page_change_counts, linewidth=2.5, color=plt.cm.Dark2(0))
+    plt.title("Percentile plot of day change fractions")
+    plt.xlabel("Percentile")
+    plt.ylabel("Fraction of days changed")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig("figures/timeline/day-change-fractions-percentile.png", dpi=400)
+
+
+def draw_page_changes_per_single_day(sunday_changes, tuesday_changes):
+    day_numbers = list(range(1, len(sunday_changes["Page text"]) + 1))
+
+    plt.figure()
+    plt.plot(day_numbers, tuesday_changes["Page text"], label="Page text (Tuesday)",
+             linewidth=2.5, color=plt.cm.Dark2(0))
+    plt.plot(day_numbers, sunday_changes["Page text"], label="Page text (Sunday)",
+             linewidth=2.5, color=plt.cm.Dark2(1))
+    plt.plot(day_numbers, tuesday_changes["Internal outlinks"], label="Internal out-links (Tuesday)",
+             linewidth=2.5, color=plt.cm.Dark2(2))
+    plt.plot(day_numbers, sunday_changes["Internal outlinks"], label="Internal out-links (Sunday)",
+             linewidth=2.5, color=plt.cm.Dark2(3))
+    plt.plot(day_numbers, tuesday_changes["External outlinks"], label="External out-links (Tuesday)",
+             linewidth=2.5, color=plt.cm.Dark2(4))
+    plt.plot(day_numbers, sunday_changes["External outlinks"], label="External out-links (Sunday)",
+             linewidth=2.5, color=plt.cm.Dark2(5))
+    plt.title("Fraction of pages per single day for which a given feature changes")
+    plt.xlabel("Day occurrence")
+    plt.ylabel("Fraction changed")
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig("figures/timeline/changes-per-single-day.png", dpi=400)
+
+
+# WEEKLY CHANGE PLOT FUNCTIONS
 
 def draw_alluvial_plot(change_cube, change_type):
     sources, targets, values, link_colors = [], [], [], []
@@ -249,80 +331,6 @@ def draw_change_behaviour_per_week(change_matrix):
     plt.ylabel("Change behaviour fraction")
     plt.tight_layout()
     plt.savefig("figures/timeline/weekly-change-behaviour.png", dpi=400)
-
-
-def draw_page_changes_per_day(changes_per_day, plot_multiple=False, corrected_dataset=False):
-    day_numbers = list(range(2, len(changes_per_day["Page text"]) + 2))
-
-    plt.figure()
-    plt.plot(day_numbers, changes_per_day["Page text"], label="Page text", linewidth=2.5, color=plt.cm.Dark2(0))
-    if plot_multiple:
-        plt.plot(day_numbers, changes_per_day["Internal outlinks"], label="Internal out-links",
-                 linewidth=2.5, color=plt.cm.Dark2(1))
-        plt.plot(day_numbers, changes_per_day["External outlinks"], label="External out-links",
-                 linewidth=2.5, color=plt.cm.Dark2(2))
-        title = "Fraction of pages per day for which a given feature changes\n"
-        plt.legend()
-    else:
-        title = "Fraction of pages per day for which text changes "
-    title += "(corrected dataset)" if corrected_dataset else "(full dataset)"
-    plt.title(title)
-    plt.xlabel("Day number")
-    plt.ylabel("Fraction changed")
-    plt.grid()
-    plt.tight_layout()
-    if plot_multiple:
-        plt.savefig("figures/timeline/changes-per-day-multiple.png", dpi=400)
-    else:
-        plt.savefig("figures/timeline/changes-per-day.png", dpi=400)
-
-
-def draw_rare_page_changes(rare_page_changes):
-    plt.figure()
-    plt.plot(list(range(2, len(rare_page_changes) + 2)), rare_page_changes, linewidth=2.5, color=plt.cm.Dark2(0))
-    plt.title("Number of rare page changes per day")
-    plt.xlabel("Day number")
-    plt.ylabel("Rare page changes")
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig("figures/timeline/rare-page-changes.png", dpi=400)
-
-
-def draw_day_change_fractions_percentile(page_change_counts):
-    plt.figure()
-    x = np.linspace(0, 100, num=len(page_change_counts))
-    plt.plot(x, page_change_counts, linewidth=2.5, color=plt.cm.Dark2(0))
-    plt.title("Percentile plot of day change fractions")
-    plt.xlabel("Percentile")
-    plt.ylabel("Fraction of days changed")
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig("figures/timeline/day-change-fractions-percentile.png", dpi=400)
-
-
-def draw_page_changes_per_single_day(sunday_changes, tuesday_changes):
-    day_numbers = list(range(1, len(sunday_changes["Page text"]) + 1))
-
-    plt.figure()
-    plt.plot(day_numbers, tuesday_changes["Page text"], label="Page text (Tuesday)",
-             linewidth=2.5, color=plt.cm.Dark2(0))
-    plt.plot(day_numbers, sunday_changes["Page text"], label="Page text (Sunday)",
-             linewidth=2.5, color=plt.cm.Dark2(1))
-    plt.plot(day_numbers, tuesday_changes["Internal outlinks"], label="Internal out-links (Tuesday)",
-             linewidth=2.5, color=plt.cm.Dark2(2))
-    plt.plot(day_numbers, sunday_changes["Internal outlinks"], label="Internal out-links (Sunday)",
-             linewidth=2.5, color=plt.cm.Dark2(3))
-    plt.plot(day_numbers, tuesday_changes["External outlinks"], label="External out-links (Tuesday)",
-             linewidth=2.5, color=plt.cm.Dark2(4))
-    plt.plot(day_numbers, sunday_changes["External outlinks"], label="External out-links (Sunday)",
-             linewidth=2.5, color=plt.cm.Dark2(5))
-    plt.title("Fraction of pages per single day for which a given feature changes")
-    plt.xlabel("Day occurrence")
-    plt.ylabel("Fraction changed")
-    plt.legend()
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig("figures/timeline/changes-per-single-day.png", dpi=400)
 
 
 def draw_different_change_behaviour_fractions(change_cube):
@@ -447,6 +455,7 @@ acb = compute_average_change_behaviour(cm0)
 # draw_average_change_behaviour_fractions(acb, "text")
 # draw_average_change_behaviour_fractions(acb, "other")
 # draw_change_behaviour_per_week(cm0["Page text"])
+
 
 # draw_different_change_behaviour_fractions(cc0["Page text"])
 # draw_same_change_behaviour_fractions(cc0["Page text"])
