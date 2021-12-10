@@ -327,7 +327,7 @@ def draw_change_behaviour_per_week(change_matrix):
 
     ax_top.set_title("Change behaviour fractions per week")
     ax_top.legend()
-    plt.xlabel("Week")
+    plt.xlabel("Week number")
     plt.ylabel("Change behaviour fraction")
     plt.tight_layout()
     plt.savefig("figures/timeline/weekly-change-behaviour.png", dpi=400)
@@ -370,7 +370,8 @@ def draw_different_change_behaviour_fractions(change_cube):
 
     plt.figure()
     plt.plot(week_numbers, fractions, linewidth=2.5, color=plt.cm.Dark2(0))
-    plt.title("Percentage of pages that exhibit different change behaviour in following week, per week")
+    plt.title("Fraction of pages that exhibits different\n"
+              "change behaviour compared to previous week")
     plt.xlabel("Week number")
     plt.ylabel("Fraction")
     plt.grid()
@@ -455,9 +456,8 @@ acb = compute_average_change_behaviour(cm0)
 # draw_average_change_behaviour_fractions(acb, "text")
 # draw_average_change_behaviour_fractions(acb, "other")
 # draw_change_behaviour_per_week(cm0["Page text"])
-# draw_same_change_behaviour_fractions(cc0["Page text"])
+draw_same_change_behaviour_fractions(cc0["Page text"])
+draw_different_change_behaviour_fractions(cc0["Page text"])
 
-
-# draw_different_change_behaviour_fractions(cc0["Page text"])
 # draw_fraction_not_changed_weekly(cm0["Page text"])
 # draw_fraction_changed_every_day_weekly(cm0["Page text"])
