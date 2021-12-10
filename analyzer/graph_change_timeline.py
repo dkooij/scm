@@ -304,14 +304,14 @@ def draw_change_behaviour_per_week(change_matrix):
     num_behaviours = len(change_matrix[0])
     fig, (ax_top, ax_bot) = plt.subplots(2, 1, sharex=True)
     for j in range(num_behaviours):
-        x = [i + j * 0.11 + 0.615 for i in range(len(change_matrix))]
+        x = [FIRST_WEEK + i + j * 0.11 - 0.385 for i in range(len(change_matrix))]
         y = [change_matrix[i][j] for i in range(len(change_matrix))]
         ax_top.bar(x, y, width=0.11, label=str(j), color=plt.cm.Dark2(j))
         ax_bot.bar(x, y, width=0.11, color=plt.cm.Dark2(j))
     ax_top.set_ylim(0.54, 0.66)
     ax_bot.set_ylim(0, 0.12)
-    ax_top.set_xlim(0, 13.65)
-    ax_bot.set_xlim(0, 13.65)
+    ax_top.set_xlim(FIRST_WEEK - 1, FIRST_WEEK + 12.65)
+    ax_bot.set_xlim(FIRST_WEEK - 1, FIRST_WEEK + 12.65)
     ax_top.spines["bottom"].set_visible(False)
     ax_bot.spines["top"].set_visible(False)
     ax_top.xaxis.tick_top()
