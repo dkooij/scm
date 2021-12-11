@@ -1,7 +1,7 @@
 """
 Read binary change data and compute binary change statistics.
 Author: Daan Kooij
-Last modified: December 10th, 2021
+Last modified: December 11th, 2021
 """
 
 from collections import defaultdict
@@ -338,7 +338,7 @@ def draw_change_behaviour_per_week(change_matrix):
 def draw_same_change_behaviour_fractions(change_cube, limit_three_classes=False):
     # Percentage of pages that continue to exhibit same change behaviour
     # in following week, per change behaviour per week
-    week_numbers = list(range(FIRST_WEEK + 1, LAST_WEEK + 1))
+    week_numbers = list(range(FIRST_WEEK, LAST_WEEK))
 
     if limit_three_classes:
         fractions_per_change_behaviour = [[] for _ in range(3)]
@@ -369,11 +369,11 @@ def draw_same_change_behaviour_fractions(change_cube, limit_three_classes=False)
         color = plt.cm.Dark2(7) if limit_three_classes and i == 2 else plt.cm.Dark2(i)
         plt.plot(week_numbers, fractions_list, linewidth=2.5, color=color, label=labels[i])
     if limit_three_classes:
-        title = "Fraction of pages that continue to exhibit same change\n" \
-                "behaviour as previous week (reduced to three classes)"
+        title = "Fraction of pages that continue to exhibit the same change\n" \
+                "behaviour in the following week (reduced to three classes)"
     else:
         title = "Fraction of pages that continue to exhibit\n" \
-                "same change behaviour as previous week"
+                "the same change behaviour in the following week"
     plt.title(title)
     plt.xlabel("Week number")
     plt.ylabel("Fraction")
@@ -385,7 +385,7 @@ def draw_same_change_behaviour_fractions(change_cube, limit_three_classes=False)
 
 
 def draw_same_change_behaviour_fractions_combined(change_cube, limit_three_classes=False):
-    week_numbers = list(range(FIRST_WEEK + 1, LAST_WEEK + 1))
+    week_numbers = list(range(FIRST_WEEK, LAST_WEEK))
 
     if limit_three_classes:
         fractions = []
@@ -409,12 +409,12 @@ def draw_same_change_behaviour_fractions_combined(change_cube, limit_three_class
     plt.figure()
     plt.plot(week_numbers, fractions, linewidth=2.5, color=plt.cm.Dark2(0))
     if limit_three_classes:
-        title = "Fraction of pages that exhibit same change\n" \
-                "behaviour as previous week with change behaviours\n" \
+        title = "Fraction of pages that continue to exhibit the same change\n" \
+                "behaviour in the following week (with change behaviours\n" \
                 "combined, reduced to three classes)"
     else:
-        title = "Fraction of pages that exhibit same change behaviour\n" \
-                "as previous week (with change behaviours combined)"
+        title = "Fraction of pages that continue to exhibit the same change\n" \
+                "behaviour in the following week (with change behaviours combined)"
     plt.title(title)
     plt.xlabel("Week number")
     plt.ylabel("Fraction")
@@ -425,7 +425,7 @@ def draw_same_change_behaviour_fractions_combined(change_cube, limit_three_class
 
 
 def draw_neighbouring_change_behaviour_fractions(change_cube, limit_three_classes=False):
-    week_numbers = list(range(FIRST_WEEK + 1, LAST_WEEK + 1))
+    week_numbers = list(range(FIRST_WEEK, LAST_WEEK))
 
     if limit_three_classes:
         fractions_per_change_behaviour = [[] for _ in range(3)]
@@ -462,11 +462,11 @@ def draw_neighbouring_change_behaviour_fractions(change_cube, limit_three_classe
         color = plt.cm.Dark2(7) if limit_three_classes and i == 2 else plt.cm.Dark2(i)
         plt.plot(week_numbers, fractions_list, linewidth=2.5, color=color, label=labels[i])
     if limit_three_classes:
-        title = "Fraction of pages that exhibit neighbouring change behaviour\n" \
-                "compared to previous week (reduced to three classes)"
+        title = "Fraction of pages that exhibit neighbouring change\n" \
+                "behaviour in the following week (reduced to three classes)"
     else:
         title = "Fraction of pages that exhibit neighbouring\n" \
-                "change behaviour compared to previous week"
+                "change behaviour in the following week"
     plt.title(title)
     plt.xlabel("Week number")
     plt.ylabel("Fraction")
