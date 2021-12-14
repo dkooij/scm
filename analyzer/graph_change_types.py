@@ -1,7 +1,7 @@
 """
 Read feature change data and compute feature change statistics.
 Author: Daan Kooij
-Last modified: December 9th, 2021
+Last modified: December 14th, 2021
 """
 
 import ast
@@ -113,11 +113,13 @@ def plot_change_fractions(change_fractions):
 
 
 def plot_informative_tuple(informative_tuple):
+    new_informative_tuple = (informative_tuple[1], informative_tuple[0], informative_tuple[2] + informative_tuple[3])
+    labels = ("Informative", "Both", "Uninformative")
+
     plt.figure()
-    labels = ("Both", "Informative", "Not informative", "Neither")
-    plt.pie(informative_tuple, labels=labels, normalize=True, startangle=90, counterclock=False,
+    plt.pie(new_informative_tuple, labels=labels, normalize=True, startangle=90, counterclock=False,
             colors=plt.cm.Dark2.colors)
-    plt.title("Fraction of changed pages for which page changes are likely informative")
+    plt.title("Fraction of changed pages that undergo (un)informative changes")
     plt.tight_layout()
     plt.savefig("figures/change/informative-pie.png", dpi=400)
     print(" * plotted informative tuple")
