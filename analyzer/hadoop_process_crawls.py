@@ -4,6 +4,7 @@ Author: Daan Kooij
 Last modified: December 16th, 2021
 """
 
+import pickle
 from pyspark import SparkContext
 from pyspark.sql import SparkSession
 import zlib
@@ -67,12 +68,19 @@ def extract_features(rdd, extract_all_static_features=False):
     return rdd
 
 
+def compress_values(rdd):
+    def compress(entry):
+        return zlib.compress(pickle.dumps(entry))
+    return rdd.mapValues(compress)
+
+
 # Single day functions
 
 def process_single_days(crawl_dir, extract_dir, days):
     for day_dir in days:
-        day_rdd = extract_features(get_raw_rdd(crawl_dir, day_dir + ".pickle"), extract_all_static_features=True)
-        day_rdd.saveAsPickleFile(extract_dir + "/features-" + day_dir)
+        day_rdd = compress_values(extract_features(get_raw_rdd(crawl_dir, day_dir + ".pickle"),
+                                                   extract_all_static_features=True))
+        day_rdd.saveAsPickleFile(extract_dir + "/features-" + day_dir + ".pickle")
 
 
 # Day pair functions
@@ -126,10 +134,10 @@ def process_day_pairs(crawl_dir, extract_dir, days):
             save_change_rdd_as_csv(change_rdd_list[0], extract_dir, day_dir)
 
 
-_crawl_dir = "/user/s1839047/crawls_sample"
-_days = ["20210612", "20210613"]
-# _crawl_dir = "/user/s1839047/crawls/data"
-# _days = global_vars.DAYS
+# _crawl_dir = "/user/s1839047/crawls_sample"
+# _days = ["20210612", "20210613", "20210614"]
+_crawl_dir = "/user/s1839047/crawls/data"
+_days = global_vars.DAYS
 
 _extract_dir = "/user/s1839047/extracted/features"
 process_single_days(_crawl_dir, _extract_dir, _days)
