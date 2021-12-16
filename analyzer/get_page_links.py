@@ -1,7 +1,7 @@
 """
 Extract the links from a crawled page.
 Author: Daan Kooij
-Last modified: November 30th, 2021
+Last modified: December 16th, 2021
 """
 
 
@@ -50,13 +50,15 @@ def href_to_url(href_url, root_domain, current_url):
 def get_page_links(current_url, page_html):
     root_domain = get_root_domain(current_url)
 
-    internal_outlinks, external_outlinks = [], []
+    internal_outlinks, external_outlinks, email_links = [], [], []
     for a in page_html.find_all("a", href=True):
         href_url = a["href"].strip()
-        if not href_url.startswith("mailto:"):
+        if href_url.startswith("mailto:"):
+            email_links.append(href_url)
+        else:
             link = href_to_url(href_url, root_domain, current_url)
             if get_sl_domain(link) == get_sl_domain(current_url):
                 internal_outlinks.append(link)
             else:
                 external_outlinks.append(link)
-    return internal_outlinks, external_outlinks
+    return internal_outlinks, external_outlinks, email_links
