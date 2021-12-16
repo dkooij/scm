@@ -1,7 +1,7 @@
 """
 Read and process pages from the HDFS as a Resilient Distributed Dataset.
 Author: Daan Kooij
-Last modified: November 30th, 2021
+Last modified: December 16th, 2021
 """
 
 from pyspark import SparkContext
@@ -9,6 +9,7 @@ from pyspark.sql import SparkSession
 import zlib
 
 import detect_html
+from get_page_html_features import get_page_html_features
 from get_page_links import get_page_links
 from get_page_text import get_page_text
 import global_vars
@@ -31,15 +32,20 @@ def extract_text(entry):
     return entry
 
 
-def extract_links(entry):
+def extract_static_features(entry, extract_all_static_features):
     page_html = detect_html.get_html(entry["Binary data"])
+
     if page_html:
-        internal_outlinks, external_outlinks = get_page_links(entry["URL"], page_html)
+        entry["Internal outlinks"], entry["External outlinks"], email_links = get_page_links(entry["URL"], page_html)
+        if extract_all_static_features:
+            entry["Email links"] = email_links
+            entry["Images"], entry["Scripts"], entry["Tables"], entry["Metas"], entry["Tags"] = \
+                get_page_html_features(page_html)
+        entry["Valid"] = True
         page_html.decompose()
     else:
-        internal_outlinks, external_outlinks = [], []
-    entry["Internal outlinks"] = internal_outlinks
-    entry["External outlinks"] = external_outlinks
+        entry["Valid"] = False
+
     return entry
 
 
@@ -52,9 +58,9 @@ def get_raw_rdd(crawl_directory, day_dir):
     return sc.pickleFile(crawl_directory + "/" + day_dir).mapValues(decompress_data)
 
 
-def extract_features(rdd):
+def extract_features(rdd, extract_all_static_features=False):
     rdd = rdd.mapValues(extract_text)
-    rdd = rdd.mapValues(extract_links)
+    rdd = rdd.mapValues(lambda entry: extract_static_features(entry, extract_all_static_features))
     rdd = rdd.mapValues(purge_binary_data)
     return rdd
 
@@ -96,7 +102,7 @@ def save_change_rdd_as_csv(change_rdd, output_directory, output_name):
     change_rdd.map(to_csv_line).saveAsTextFile(output_path)
 
 
-def process(crawl_dir, extract_dir, days):
+def process_pairs(crawl_dir, extract_dir, days):
     day1_rdd, day2_rdd = None, None
     for day_dir in days:
         day1_rdd = day2_rdd
@@ -111,4 +117,4 @@ def process(crawl_dir, extract_dir, days):
 _crawl_dir = "/user/s1839047/crawls/data"
 _extract_dir = "/user/s1839047/extracted"
 _days = global_vars.DAYS
-process(_crawl_dir, _extract_dir, _days)
+process_pairs(_crawl_dir, _extract_dir, _days)
