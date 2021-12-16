@@ -62,7 +62,7 @@ def get_raw_rdd(crawl_directory, day_dir):
 def extract_features(rdd, extract_all_static_features=False):
     rdd = rdd.mapValues(extract_text)
     rdd = rdd.mapValues(lambda entry: extract_static_features(entry, extract_all_static_features))
-    rdd = rdd.filter(lambda entry: entry["Valid"])
+    rdd = rdd.filter(lambda key_value_pair: key_value_pair[1]["Valid"])
     rdd = rdd.mapValues(purge_binary_data)
     return rdd
 
@@ -126,8 +126,10 @@ def process_day_pairs(crawl_dir, extract_dir, days):
             save_change_rdd_as_csv(change_rdd_list[0], extract_dir, day_dir)
 
 
-_crawl_dir = "/user/s1839047/crawls/data"
-_days = global_vars.DAYS
+_crawl_dir = "/user/s1839047/crawls_sample"
+_days = ["20210612", "20210613"]
+# _crawl_dir = "/user/s1839047/crawls/data"
+# _days = global_vars.DAYS
 
 _extract_dir = "/user/s1839047/extracted/features"
 process_single_days(_crawl_dir, _extract_dir, _days)
