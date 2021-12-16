@@ -51,6 +51,7 @@ def extract_static_features(entry, extract_all_static_features):
 
 def purge_binary_data(entry):
     del entry["Binary data"]
+    del entry["Valid"]
     return entry
 
 
@@ -61,9 +62,20 @@ def get_raw_rdd(crawl_directory, day_dir):
 def extract_features(rdd, extract_all_static_features=False):
     rdd = rdd.mapValues(extract_text)
     rdd = rdd.mapValues(lambda entry: extract_static_features(entry, extract_all_static_features))
+    rdd = rdd.filter(lambda entry: entry["Valid"])
     rdd = rdd.mapValues(purge_binary_data)
     return rdd
 
+
+# Single day functions
+
+def process_single_days(crawl_dir, extract_dir, days):
+    for day_dir in days:
+        day_rdd = extract_features(get_raw_rdd(crawl_dir, day_dir + ".pickle"), extract_all_static_features=True)
+        day_rdd.saveAsPickleFile(extract_dir + "/features-" + day_dir)
+
+
+# Day pair functions
 
 def get_day_pairs(raw_rdds):
     pair_rdds = []
@@ -102,7 +114,7 @@ def save_change_rdd_as_csv(change_rdd, output_directory, output_name):
     change_rdd.map(to_csv_line).saveAsTextFile(output_path)
 
 
-def process_pairs(crawl_dir, extract_dir, days):
+def process_day_pairs(crawl_dir, extract_dir, days):
     day1_rdd, day2_rdd = None, None
     for day_dir in days:
         day1_rdd = day2_rdd
@@ -115,6 +127,9 @@ def process_pairs(crawl_dir, extract_dir, days):
 
 
 _crawl_dir = "/user/s1839047/crawls/data"
-_extract_dir = "/user/s1839047/extracted"
 _days = global_vars.DAYS
-process_pairs(_crawl_dir, _extract_dir, _days)
+
+_extract_dir = "/user/s1839047/extracted/features"
+process_single_days(_crawl_dir, _extract_dir, _days)
+# _extract_dir = "/user/s1839047/extracted/change"
+# process_day_pairs(_crawl_dir, _extract_dir, _days)
