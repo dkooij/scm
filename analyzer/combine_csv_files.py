@@ -1,7 +1,7 @@
 """
 Combine a collection of CSV files into a single CSV file.
 Author: Daan Kooij
-Last modified: December 17th, 2021
+Last modified: December 20th, 2021
 """
 
 import os
@@ -22,7 +22,7 @@ def csv_entries():
 
                     with open(csv_file_path) as file:
                         for line in file:
-                            yield line
+                            yield line.strip()
 
 
 with open(OUTPUT_DIRECTORY, "w") as output_file:
