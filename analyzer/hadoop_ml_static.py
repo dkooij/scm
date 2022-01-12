@@ -24,30 +24,36 @@ df = spark.read.csv(INPUT_PATH)
 df = df.rdd.map(lambda row: Row(**{"features": DenseVector([int(x) for x in row[:9]]),
                                    "target": int(row[9])})).toDF()
 count_zero, count_one = df.filter(df.target == 0).count(), df.filter(df.target == 1).count()
-weight_zero, weight_one = count_one / count_zero, 1.0
+weight_zero, weight_one = count_one / count_zero, 1.0  # Assuming that count_zero >= count_one
 df = df.rdd.map(lambda row: Row(**{"features": row["features"],
                                    "target": row["target"],
                                    "weight": weight_zero if row["target"] == 0 else weight_one})).toDF()
 (data_train, data_test) = df.randomSplit([0.8, 0.2], seed=42)
 
+data_train_balanced_zero = data_train.filter(data_train.target == 0).sample(weight_zero, 42)
+data_train_balanced_one = data_train.filter(data_train.target == 1)
+data_train_balanced = data_train_balanced_zero.union(data_train_balanced_one)
 
-model_type = "lr"
+
+model_type = "rf"
 if model_type == "lr":
-    blank_model = LogisticRegression(labelCol="target", featuresCol="features", weightCol="weight")
+    lr_model = LogisticRegression(labelCol="target", featuresCol="features", weightCol="weight")
+    model = lr_model.fit(data_train)
 elif model_type == "svm":
-    blank_model = LinearSVC(labelCol="target", featuresCol="features", weightCol="weight")
+    svm_model = LinearSVC(labelCol="target", featuresCol="features", weightCol="weight")
+    model = svm_model.fit(data_train)
 elif model_type == "nb":
-    blank_model = NaiveBayes(labelCol="target", featuresCol="features", weightCol="weight")
+    nb_model = NaiveBayes(labelCol="target", featuresCol="features", weightCol="weight")
+    model = nb_model.fit(data_train)
 elif model_type == "dt":
-    # TODO: weights
-    blank_model = DecisionTreeClassifier(labelCol="target", featuresCol="features")
+    dt_model = DecisionTreeClassifier(labelCol="target", featuresCol="features")
+    model = dt_model.fit(data_train_balanced)
 else:  # model_type == "rf"
-    # TODO: weights
-    blank_model = RandomForestClassifier(labelCol="target", featuresCol="features")
+    rf_model = RandomForestClassifier(labelCol="target", featuresCol="features")
+    model = rf_model.fit(data_train_balanced)
 
-model = blank_model.fit(data_train)
+
 predictions = model.transform(data_test)
-
 
 predictions_rdd = predictions.select("target", "prediction").rdd.map(
     lambda row: (float(row["target"]), float(row["prediction"])))
