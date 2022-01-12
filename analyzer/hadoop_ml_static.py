@@ -21,7 +21,7 @@ spark = SparkSession.builder.getOrCreate()
 
 
 def setup():
-    df = spark.read.csv(INPUT_PATH)
+    df = spark.read.csv(INPUT_PATH).repartition(600)
     df = df.rdd.map(lambda row: Row(**{"features": DenseVector([int(x) for x in row[:9]]),
                                        "target": int(row[9])})).toDF()
     count_zero, count_one = df.filter(df.target == 0).count(), df.filter(df.target == 1).count()
