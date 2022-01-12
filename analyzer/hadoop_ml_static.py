@@ -1,7 +1,7 @@
 """
 Train ML models to predict page text changes using static features.
 Author: Daan Kooij
-Last modified: January 11th, 2021
+Last modified: January 12th, 2021
 """
 
 from pyspark import SparkContext
@@ -33,22 +33,19 @@ df = df.rdd.map(lambda row: Row(**{"features": row["features"],
 
 model_type = "lr"
 if model_type == "lr":
-    lr = LogisticRegression(labelCol="target", featuresCol="features", weightCol="weight")
-    model = lr.fit(data_train)
+    blank_model = LogisticRegression(labelCol="target", featuresCol="features", weightCol="weight")
 elif model_type == "svm":
-    svm = LinearSVC(labelCol="target", featuresCol="features", weightCol="weight")
-    model = svm.fit(data_train)
+    blank_model = LinearSVC(labelCol="target", featuresCol="features", weightCol="weight")
 elif model_type == "nb":
-    nb = NaiveBayes(labelCol="target", featuresCol="features", weightCol="weight")
-    model = nb.fit(data_train)
+    blank_model = NaiveBayes(labelCol="target", featuresCol="features", weightCol="weight")
 elif model_type == "dt":
     # TODO: weights
-    dt = DecisionTreeClassifier(labelCol="target", featuresCol="features")
-    model = dt.fit(data_train)
-else:  # elif model_type == "rf":
+    blank_model = DecisionTreeClassifier(labelCol="target", featuresCol="features")
+else:  # model_type == "rf"
     # TODO: weights
-    rf = RandomForestClassifier(labelCol="target", featuresCol="features")
-    model = rf.fit(data_train)
+    blank_model = RandomForestClassifier(labelCol="target", featuresCol="features")
+
+model = blank_model.fit(data_train)
 predictions = model.transform(data_test)
 
 
