@@ -1,7 +1,7 @@
 """
 Convert feature RDD to CSVs of static feature training pairs.
 Author: Daan Kooij
-Last modified: December 17th, 2021
+Last modified: January 18th, 2022
 """
 
 import pickle
@@ -43,7 +43,8 @@ def save_training_pair_rdd_as_csv(rdd, output_directory, output_name):
 
     def to_csv_line(rdd_row):
         file_name, (features, targets) = rdd_row
-        return ",".join(str(v) for v in features) + "," + ",".join(str(int(v)) for v in targets)
+        page_id = file_name.split("_")[1]
+        return page_id + "," + ",".join(str(v) for v in features) + "," + ",".join(str(int(v)) for v in targets)
 
     rdd.map(to_csv_line).saveAsTextFile(output_path)
 
@@ -60,7 +61,7 @@ def extract_static_training_pairs(features_dir, extract_dir, days, feature_names
 
 
 _features_dir = "/user/s1839047/extracted/features"
-_extract_dir = "/user/s1839047/extracted/static-training-pairs"
+_extract_dir = "/user/s1839047/extracted/static-training-pairs-2"
 _days = global_vars.DAYS
 _feature_names = ["Email links", "External outlinks", "Images", "Internal outlinks",
                   "Metas", "Page text", "Scripts", "Tables", "Tags"]
