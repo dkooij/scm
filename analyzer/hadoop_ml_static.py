@@ -1,9 +1,10 @@
 """
 Train ML models to predict page text changes using static features.
 Author: Daan Kooij
-Last modified: January 12th, 2021
+Last modified: January 18th, 2022
 """
 
+import hashlib
 from pyspark import SparkContext
 from pyspark.ml.classification import DecisionTreeClassifier, LinearSVC, LogisticRegression, NaiveBayes, RandomForestClassifier
 from pyspark.ml.linalg import DenseVector
@@ -11,7 +12,7 @@ from pyspark.mllib.evaluation import MulticlassMetrics
 from pyspark.sql import Row, SparkSession
 
 
-INPUT_PATH = "extracted/static-training-pairs-combined.csv"
+INPUT_PATH = "extracted/static-training-pairs-combined-2.csv"
 
 
 # Initialize Spark and SparkSQL context.
@@ -22,14 +23,19 @@ spark = SparkSession.builder.getOrCreate()
 
 def setup():
     df = spark.read.csv(INPUT_PATH).repartition(600)
-    df = df.rdd.map(lambda row: Row(**{"features": DenseVector([int(x) for x in row[:9]]),
-                                       "target": int(row[9])})).toDF()
+    df = df.rdd.map(lambda row: Row(**{"page_id": row[0],
+                                       "features": DenseVector([int(x) for x in row[1:10]]),
+                                       "target": int(row[10])})).toDF()
+
     count_zero, count_one = df.filter(df.target == 0).count(), df.filter(df.target == 1).count()
     weight_zero, weight_one = count_one / count_zero, 1.0  # Assuming that count_zero >= count_one
     df = df.rdd.map(lambda row: Row(**{"features": row["features"],
                                        "target": row["target"],
-                                       "weight": weight_zero if row["target"] == 0 else weight_one})).toDF()
-    (data_train, data_test) = df.randomSplit([0.8, 0.2], seed=42)
+                                       "weight": weight_zero if row["target"] == 0 else weight_one,
+                                       "page_hash": int(hashlib.md5(row["page_id"].encode("utf-8")).hexdigest(), 16)
+                                       })).toDF()
+
+    (data_train, data_test) = df.filter(df.page_hash % 10 < 8), df.filter(df.page_hash % 10 >= 8)
 
     data_train_balanced_zero = data_train.filter(data_train.target == 0).sample(weight_zero, 42)
     data_train_balanced_one = data_train.filter(data_train.target == 1)
