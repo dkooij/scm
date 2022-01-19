@@ -12,7 +12,7 @@ from pyspark.mllib.evaluation import MulticlassMetrics
 from pyspark.sql import Row, SparkSession
 
 
-INPUT_PATH = "extracted/static-training-pairs-combined-2-sample.csv"
+INPUT_PATH = "extracted/static-training-pairs-combined-2.csv"
 
 
 # Initialize Spark and SparkSQL context.
@@ -43,6 +43,15 @@ def setup():
     data_train_balanced = data_train_balanced_zero.union(data_train_balanced_one)
 
     return data_train, data_test, data_train_balanced
+
+
+def save_checkpoint(df, name):
+    df.rdd.saveAsPickleFile("checkpoints/" + name + ".pickle")
+
+
+def load_checkpoint(name):
+    rdd = sc.pickleFile("checkpoints/" + name + ".pickle")
+    return rdd.toDF()
 
 
 def evaluate(trained_model, data_test, model_type, model_setting):
@@ -103,7 +112,13 @@ def train_models(data_train, data_train_balanced, model_types, model_settings):
 
 _model_types = ("rf",)
 _model_settings = ("balanced",)
-_data_train, _data_test, _data_train_balanced = setup()
-_trained_models = train_models(_data_train, _data_train_balanced, _model_types, _model_settings)
+
+# _data_train, _data_test, _data_train_balanced = setup()
+# save_checkpoint(_data_train_balanced, "data-train")
+# save_checkpoint(_data_train_balanced, "data-train-balanced")
+# save_checkpoint(_data_test, "data-test")
+
+_data_train_balanced, _data_test = load_checkpoint("data-train-balanced"), load_checkpoint("data-test")
+_trained_models = train_models(None, _data_train_balanced, _model_types, _model_settings)
 for _trained_model, _model_type, _model_setting in _trained_models:
     evaluate(_trained_model, _data_test, _model_type, _model_setting)
