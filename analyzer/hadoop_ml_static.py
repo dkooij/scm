@@ -1,7 +1,7 @@
 """
 Train ML models to predict page text changes using static features.
 Author: Daan Kooij
-Last modified: January 18th, 2022
+Last modified: January 19th, 2022
 """
 
 import hashlib
@@ -12,7 +12,7 @@ from pyspark.mllib.evaluation import MulticlassMetrics
 from pyspark.sql import Row, SparkSession
 
 
-INPUT_PATH = "extracted/static-training-pairs-combined-2.csv"
+INPUT_PATH = "extracted/static-training-pairs-combined-2-sample.csv"
 
 
 # Initialize Spark and SparkSQL context.
@@ -32,10 +32,11 @@ def setup():
     df = df.rdd.map(lambda row: Row(**{"features": row["features"],
                                        "target": row["target"],
                                        "weight": weight_zero if row["target"] == 0 else weight_one,
-                                       "page_hash": int(hashlib.md5(row["page_id"].encode("utf-8")).hexdigest(), 16)
+                                       "validation": int(hashlib.md5(
+                                           row["page_id"].encode("utf-8")).hexdigest(), base=16) % 5 == 4,
                                        })).toDF()
 
-    (data_train, data_test) = df.filter(df.page_hash % 10 < 8), df.filter(df.page_hash % 10 >= 8)
+    (data_train, data_test) = df.filter(~df.validation), df.filter(df.validation)
 
     data_train_balanced_zero = data_train.filter(data_train.target == 0).sample(weight_zero, 42)
     data_train_balanced_one = data_train.filter(data_train.target == 1)
@@ -100,8 +101,8 @@ def train_models(data_train, data_train_balanced, model_types, model_settings):
                 yield rf_model.fit(data_train_balanced), "rf", "balanced"
 
 
-_model_types = ("lr", "svm", "nb", "dt", "rf")
-_model_settings = ("standard", "weighted", "balanced")
+_model_types = ("rf",)
+_model_settings = ("balanced",)
 _data_train, _data_test, _data_train_balanced = setup()
 _trained_models = train_models(_data_train, _data_train_balanced, _model_types, _model_settings)
 for _trained_model, _model_type, _model_setting in _trained_models:
