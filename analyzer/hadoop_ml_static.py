@@ -114,7 +114,7 @@ _model_types = ("rf",)
 _model_settings = ("balanced",)
 
 # _data_train, _data_test, _data_train_balanced = setup()
-# save_checkpoint(_data_train_balanced, "data-train")
+# save_checkpoint(_data_train, "data-train")
 # save_checkpoint(_data_train_balanced, "data-train-balanced")
 # save_checkpoint(_data_test, "data-test")
 
