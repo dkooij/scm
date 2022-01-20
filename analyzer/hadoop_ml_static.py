@@ -9,16 +9,16 @@ from pyspark import SparkContext
 from pyspark.ml.classification import DecisionTreeClassifier, LinearSVC, LogisticRegression, NaiveBayes, RandomForestClassifier
 from pyspark.ml.evaluation import BinaryClassificationEvaluator
 from pyspark.ml.linalg import DenseVector
-from pyspark.ml.tuning import ParamGridBuilder, TrainValidationSplit
+from pyspark.ml.tuning import CrossValidator, ParamGridBuilder
 from pyspark.mllib.evaluation import MulticlassMetrics
 from pyspark.sql import Row, SparkSession
 
 
-INPUT_PATH = "extracted/static-training-pairs-combined-2-sample.csv"
+INPUT_PATH = "extracted/static-training-pairs-combined-2.csv"
 
 
 # Initialize Spark and SparkSQL context.
-sc = SparkContext(appName="SCM-EXTRACT-STATIC-TRAINING-PAIRS")
+sc = SparkContext(appName="SCM-ML-STATIC")
 sc.setLogLevel("ERROR")
 spark = SparkSession.builder.getOrCreate()
 
@@ -56,20 +56,32 @@ def load_checkpoint(name):
     return rdd.toDF()
 
 
-def train_tune_random_forest(rf, data_train):
+def train_random_forest(data_train, num_folds=5):
+    rf = RandomForestClassifier(seed=42)
+
+    count = int(data_train.count() * (num_folds - 1) / num_folds)
     param_grid = ParamGridBuilder() \
-        .addGrid(rf.impurity, ["gini", "entropy"]) \
-        .addGrid(rf.maxBins, [16, 32]) \
+        .addGrid(rf.numTrees, [20, 50]) \
+        .addGrid(rf.maxDepth, [5, 8, 10]) \
+        .addGrid(rf.minInstancesPerNode, [1, int(count * 0.00001), int(count * 0.0001)]) \
         .build()
-    tv_split = TrainValidationSplit(estimator=rf,
-                                    estimatorParamMaps=param_grid,
-                                    evaluator=BinaryClassificationEvaluator(),
-                                    trainRatio=0.8,
-                                    seed=42)
-    return tv_split.fit(data_train)
+    # param_grid = ParamGridBuilder().addGrid(rf.maxDepth, [2]).build()
+    cv = CrossValidator(estimator=rf, estimatorParamMaps=param_grid,
+                        evaluator=BinaryClassificationEvaluator(), numFolds=num_folds, seed=42)
+
+    cv = cv.fit(data_train)
+    best_model = cv.bestModel
+
+    print("Random Forest parameters:")
+    print("- Number of folds (cv):", num_folds)
+    print("- Number of trees:", best_model.getOrDefault("numTrees"))
+    print("- Maximum tree depth:", best_model.getOrDefault("maxDepth"))
+    print("- Minimum instances per node:", best_model.getOrDefault("minInstancesPerNode"))
+
+    return best_model
 
 
-def evaluate(trained_model, data_test, model_type, model_setting):
+def evaluate(trained_model, data_test):
     predictions = trained_model.transform(data_test)
 
     predictions_rdd = predictions.select("label", "prediction").rdd.map(
@@ -78,8 +90,16 @@ def evaluate(trained_model, data_test, model_type, model_setting):
     metrics = MulticlassMetrics(predictions_rdd)
     confusion_matrix = [[int(v) for v in inner_list] for inner_list in metrics.confusionMatrix().toArray()]
 
-    print("Model type: " + model_type + ", setting: " + model_setting)
-    print(str(confusion_matrix[0]) + "\n" + str(confusion_matrix[1]) + "\n")
+    recall_zero = confusion_matrix[0][0] / (confusion_matrix[0][0] + confusion_matrix[1][0])
+    recall_one = confusion_matrix[1][1] / (confusion_matrix[0][1] + confusion_matrix[1][1])
+    recall_minimum = min(recall_zero, recall_one)
+
+    print("\nMetrics:")
+    print("- Confusion matrix:", confusion_matrix)
+    print("- Minimum recall:", str(round(recall_minimum * 100, 2)) + "%")
+
+    print("\nFeature importances:")
+    print(trained_model.featureImportances)
 
 
 def train_models(data_train, data_train_balanced, model_types, model_settings):
@@ -118,13 +138,7 @@ def train_models(data_train, data_train_balanced, model_types, model_settings):
             if "balanced" in model_settings:
                 yield dt_model.fit(data_train_balanced), "dt", "balanced"
         else:  # model_type == "rf"
-            rf_model = RandomForestClassifier(labelCol="label", featuresCol="features", seed=42)
-            # rf_model = RandomForestClassifier(labelCol="label", featuresCol="features",
-            #                                   minInstancesPerNode=int(0.0001 * data_train_balanced.count()))
-            if "standard" in model_settings:
-                yield train_tune_random_forest(rf_model, data_train), "rf", "standard"
-            if "balanced" in model_settings:
-                yield train_tune_random_forest(rf_model, data_train_balanced), "rf", "balanced"
+            yield train_random_forest(data_train_balanced)
 
 
 _model_types = ("rf",)
@@ -135,10 +149,8 @@ _model_settings = ("balanced",)
 # save_checkpoint(_data_train_balanced, "data-train-balanced")
 # save_checkpoint(_data_test, "data-test")
 
-_data_train_balanced, _data_test = load_checkpoint("sample-train-balanced"), load_checkpoint("sample-test")
+_data_train_balanced, _data_test = load_checkpoint("data-train-balanced"), load_checkpoint("data-test")
 
 _trained_models = train_models(None, _data_train_balanced, _model_types, _model_settings)
-for _trained_model, _model_type, _model_setting in _trained_models:
-    # print("MODEL PARAMETERS:", _trained_model.explainParams(), "\n")
-    # print("FEATURE IMPORTANCES:", _trained_model.featureImportances, "\n")
-    evaluate(_trained_model, _data_test, _model_type, _model_setting)
+for _trained_model in _trained_models:
+    evaluate(_trained_model, _data_test)
