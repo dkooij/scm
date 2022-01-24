@@ -1,7 +1,7 @@
 """
 Train ML models to predict page text changes using static features.
 Author: Daan Kooij
-Last modified: January 21th, 2022
+Last modified: January 21st, 2022
 """
 
 import hashlib
