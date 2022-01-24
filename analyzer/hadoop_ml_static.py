@@ -1,7 +1,7 @@
 """
 Train ML models to predict page text changes using static features.
 Author: Daan Kooij
-Last modified: January 20th, 2022
+Last modified: January 21th, 2022
 """
 
 import hashlib
@@ -12,6 +12,7 @@ from pyspark.ml.linalg import DenseVector
 from pyspark.ml.tuning import CrossValidator, ParamGridBuilder
 from pyspark.mllib.evaluation import MulticlassMetrics
 from pyspark.sql import Row, SparkSession
+import time
 
 
 INPUT_PATH = "extracted/static-training-pairs-combined-2.csv"
@@ -56,29 +57,35 @@ def load_checkpoint(name):
     return rdd.toDF()
 
 
-def train_random_forest(data_train, num_folds=5):
-    rf = RandomForestClassifier(seed=42)
+def train_random_forest(data_train, max_depth=5, num_folds=5):
+    rf = RandomForestClassifier(numTrees=20, maxDepth=max_depth, minInstancesPerNode=1, seed=42)
 
-    count = int(data_train.count() * (num_folds - 1) / num_folds)
-    param_grid = ParamGridBuilder() \
-        .addGrid(rf.numTrees, [20, 50]) \
-        .addGrid(rf.maxDepth, [5, 8, 10]) \
-        .addGrid(rf.minInstancesPerNode, [1, int(count * 0.00001), int(count * 0.0001)]) \
-        .build()
+    # count = int(data_train.count() * (num_folds - 1) / num_folds)
+    # param_grid = ParamGridBuilder() \
+    #     .addGrid(rf.numTrees, [50]) \
+    #     .addGrid(rf.maxDepth, [20]) \
+    #     .addGrid(rf.minInstancesPerNode, [1]) \
+    #     .build()
     # param_grid = ParamGridBuilder().addGrid(rf.maxDepth, [2]).build()
-    cv = CrossValidator(estimator=rf, estimatorParamMaps=param_grid,
-                        evaluator=BinaryClassificationEvaluator(), numFolds=num_folds, seed=42)
+    # cv = CrossValidator(estimator=rf, estimatorParamMaps=param_grid,
+    #                     evaluator=BinaryClassificationEvaluator(), numFolds=num_folds, seed=42)
 
-    cv = cv.fit(data_train)
-    best_model = cv.bestModel
+    # cv = cv.fit(data_train)
+    # best_model = cv.bestModel
+    best_model = rf.fit(data_train)
 
     print("Random Forest parameters:")
-    print("- Number of folds (cv):", num_folds)
+    # print("- Number of folds (cv):", num_folds)
     print("- Number of trees:", best_model.getOrDefault("numTrees"))
     print("- Maximum tree depth:", best_model.getOrDefault("maxDepth"))
     print("- Minimum instances per node:", best_model.getOrDefault("minInstancesPerNode"))
 
     return best_model
+
+
+def train_random_forests(data_train, depth_range):
+    for d in depth_range:
+        yield train_random_forest(data_train, max_depth=d)
 
 
 def evaluate(trained_model, data_test):
@@ -151,6 +158,12 @@ _model_settings = ("balanced",)
 
 _data_train_balanced, _data_test = load_checkpoint("data-train-balanced"), load_checkpoint("data-test")
 
-_trained_models = train_models(None, _data_train_balanced, _model_types, _model_settings)
+_trained_models = train_random_forests(_data_train_balanced, range(1, 21))
+
+start_time = time.time()  # For first iteration
 for _trained_model in _trained_models:
     evaluate(_trained_model, _data_test)
+    execution_time = int(time.time() - start_time)
+    print("\nExecution time:", execution_time, "seconds")
+    print("\n--------------------------------\n")
+    start_time = time.time()  # For next iteration
