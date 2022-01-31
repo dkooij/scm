@@ -180,12 +180,13 @@ _feature_subsets = [(0, 1, 2, 3, 4, 5, 6, 7, 8),
                     (5, 8),
                     (8,)]
 
-for _fs in _feature_subsets:
+for _fs in _feature_subsets[:1]:
     start_time = time.time()
     _data_train_balanced_fs = select_feature_subset(_data_train_balanced, _fs)
     _data_test_fs = select_feature_subset(_data_test, _fs)
     _trained_model = train_random_forest(_data_train_balanced_fs, num_trees=20,
-                                         max_depth=15, min_instances_per_node=1)
+                                         max_depth=15, min_instances_per_node=100)
+    _trained_model.save("models/rf.model")
     evaluate(_trained_model, _data_test_fs)
     execution_time = int(time.time() - start_time)
     print("\nExecution time:", execution_time, "seconds")
