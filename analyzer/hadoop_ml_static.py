@@ -1,7 +1,7 @@
 """
 Train ML models to predict page text changes using static features.
 Author: Daan Kooij
-Last modified: January 21st, 2022
+Last modified: January 31st, 2022
 """
 
 import hashlib
@@ -57,8 +57,9 @@ def load_checkpoint(name):
     return rdd.toDF()
 
 
-def train_random_forest(data_train, max_depth=5, num_folds=5):
-    rf = RandomForestClassifier(numTrees=20, maxDepth=max_depth, minInstancesPerNode=1, seed=42)
+def train_random_forest(data_train, num_trees=20, max_depth=10, min_instances_per_node=1, num_folds=5):
+    rf = RandomForestClassifier(numTrees=num_trees, maxDepth=max_depth,
+                                minInstancesPerNode=min_instances_per_node, seed=42)
 
     # count = int(data_train.count() * (num_folds - 1) / num_folds)
     # param_grid = ParamGridBuilder() \
@@ -79,13 +80,24 @@ def train_random_forest(data_train, max_depth=5, num_folds=5):
     print("- Number of trees:", best_model.getOrDefault("numTrees"))
     print("- Maximum tree depth:", best_model.getOrDefault("maxDepth"))
     print("- Minimum instances per node:", best_model.getOrDefault("minInstancesPerNode"))
+    print("- Number of features used:", len(data_train.first()["features"]))
 
     return best_model
 
 
+def select_feature_subset(df, feature_subset):
+    return df.rdd.map(lambda row: Row(**{"features": DenseVector([row["features"][i] for i in feature_subset]),
+                                         "label": row["label"],
+                                         "weight": row["weight"],
+                                         "validation": row["validation"],
+                                         })).toDF()
+
+
+"""
 def train_random_forests(data_train, depth_range):
     for d in depth_range:
         yield train_random_forest(data_train, max_depth=d)
+"""
 
 
 def evaluate(trained_model, data_test):
@@ -109,6 +121,7 @@ def evaluate(trained_model, data_test):
     print(trained_model.featureImportances)
 
 
+"""
 def train_models(data_train, data_train_balanced, model_types, model_settings):
     for model_type in model_types:
         if model_type == "lr":
@@ -146,10 +159,8 @@ def train_models(data_train, data_train_balanced, model_types, model_settings):
                 yield dt_model.fit(data_train_balanced), "dt", "balanced"
         else:  # model_type == "rf"
             yield train_random_forest(data_train_balanced)
+"""
 
-
-_model_types = ("rf",)
-_model_settings = ("balanced",)
 
 # _data_train, _data_test, _data_train_balanced = setup()
 # save_checkpoint(_data_train, "data-train")
@@ -158,12 +169,24 @@ _model_settings = ("balanced",)
 
 _data_train_balanced, _data_test = load_checkpoint("data-train-balanced"), load_checkpoint("data-test")
 
-_trained_models = train_random_forests(_data_train_balanced, range(1, 21))
+# _trained_models = train_random_forests(_data_train_balanced, range(1, 21))
+_feature_subsets = [(0, 1, 2, 3, 4, 5, 6, 7, 8),
+                    (0, 1, 2, 3, 4, 5, 6, 8),
+                    (1, 2, 3, 4, 5, 6, 8),
+                    (1, 2, 3, 5, 6, 8),
+                    (2, 3, 5, 6, 8),
+                    (3, 5, 6, 8),
+                    (3, 5, 8),
+                    (5, 8),
+                    (8,)]
 
-start_time = time.time()  # For first iteration
-for _trained_model in _trained_models:
-    evaluate(_trained_model, _data_test)
+for _fs in _feature_subsets:
+    start_time = time.time()
+    _data_train_balanced_fs = select_feature_subset(_data_train_balanced, _fs)
+    _data_test_fs = select_feature_subset(_data_test, _fs)
+    _trained_model = train_random_forest(_data_train_balanced_fs, num_trees=20,
+                                         max_depth=15, min_instances_per_node=1)
+    evaluate(_trained_model, _data_test_fs)
     execution_time = int(time.time() - start_time)
     print("\nExecution time:", execution_time, "seconds")
     print("\n--------------------------------\n")
-    start_time = time.time()  # For next iteration
