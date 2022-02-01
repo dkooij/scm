@@ -25,9 +25,11 @@ def create_feature_grid(feature_statistics, feature1, feature2, resolution):
     values = [t[2] for t in feature_statistics]
     vectors = []
 
-    for x in np.linspace(feature_statistics[feature1][0], feature_statistics[feature1][1], resolution, dtype=int):
+    for x in sorted(list(set(np.linspace(feature_statistics[feature1][0], feature_statistics[feature1][1],
+                                         resolution, dtype=int)))):
         values[feature1] = x
-        for y in np.linspace(feature_statistics[feature2][0], feature_statistics[feature2][1], resolution, dtype=int):
+        for y in sorted(list(set(np.linspace(feature_statistics[feature2][0], feature_statistics[feature2][1],
+                                             resolution, dtype=int)))):
             values[feature2] = y
             vectors.append(DenseVector(values))
 
@@ -55,10 +57,7 @@ def create_heatmaps(model_type, model_name, feature_statistics, feature_pairs, r
 _model_type, _model_name = "rf", "rf"
 _feature_statistics = [(0, 3, 0), (0, 76, 5), (0, 86, 6), (0, 339, 41), (0, 37, 9),
                        (2, 792, 120), (0, 65, 14), (0, 8, 0), (6, 2186, 368)]
-_feature_pairs = [(2, 5), (2, 6), (2, 8),
-                  (5, 2), (5, 6), (5, 8),
-                  (6, 2), (6, 5), (6, 8),
-                  (8, 2), (8, 5), (8, 6)]
+_feature_pairs = [(x, y) for x in range(9) for y in range(9) if x != y]
 _resolution = 100
 
 create_heatmaps(_model_type, _model_name, _feature_statistics, _feature_pairs, _resolution)
