@@ -1,7 +1,7 @@
 """
 Train ML models to predict page text changes using static features.
 Author: Daan Kooij
-Last modified: January 31st, 2022
+Last modified: February 1st, 2022
 """
 
 import hashlib
@@ -184,7 +184,7 @@ for _fs in _feature_subsets[:1]:
     start_time = time.time()
     _data_train_balanced_fs = select_feature_subset(_data_train_balanced, _fs)
     _data_test_fs = select_feature_subset(_data_test, _fs)
-    _trained_model = train_random_forest(_data_train_balanced_fs, num_trees=20,
+    _trained_model = train_random_forest(_data_train_balanced_fs, num_trees=50,
                                          max_depth=15, min_instances_per_node=100)
     _trained_model.save("models/rf.model")
     evaluate(_trained_model, _data_test_fs)
