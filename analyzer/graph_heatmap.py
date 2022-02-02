@@ -86,13 +86,13 @@ def draw_heatmaps(model_name, feature_pairs, rows, columns, tpd=None, figure=Non
             if tpd is not None:
                 xs = [t[0][x] for t in tpd]
                 ys = [t[0][y] for t in tpd]
-                cs = [t[1] for t in tpd]
-                ax.scatter(xs, ys, c=cs, s=0.4, cmap=plt.cm.RdBu, vmin=0, vmax=1)
+                cs = [1 - t[1] for t in tpd]  # One minus the target value because seismic colormap is opposite.
+                ax.scatter(xs, ys, c=cs, s=0.4, cmap=plt.cm.seismic, vmin=0, vmax=1)
 
     fig.suptitle("Visualisation of decisions made by " + model_name + " model")
     fig.tight_layout()
     if figure is None:
-        fig.savefig("figures/ml-static/heatmaps_important.png", dpi=400)
+        fig.savefig("figures/ml-static/heatmaps-important.png", dpi=400)
 
 
 def draw_all_heatmaps(model_name, tpd=None):
@@ -100,7 +100,7 @@ def draw_all_heatmaps(model_name, tpd=None):
     feature_pairs = [(x, y) for x in range(9) for y in range(9)]
     draw_heatmaps(model_name, feature_pairs, 9, 9, tpd=tpd, figure=fig)
     fig.tight_layout()
-    fig.savefig("figures/ml-static/heatmaps_all.png", dpi=300)
+    fig.savefig("figures/ml-static/heatmaps-all.png", dpi=300)
 
 
 # _tpd = load_training_pair_data(1000)
