@@ -1,7 +1,7 @@
 """
 Defines global variables that can be used across modules.
 Author: Daan Kooij
-Last modified: November 30th, 2021
+Last modified: February 2nd, 2022
 """
 
 
@@ -15,3 +15,6 @@ DAYS = ["20210612", "20210613", "20210614", "20210615", "20210616", "20210617", 
         "20210814", "20210815", "20210816", "20210817", "20210818", "20210819", "20210820", "20210821", "20210822",
         "20210823", "20210824", "20210825", "20210826", "20210827", "20210828", "20210829", "20210830", "20210831",
         "20210901", "20210902", "20210903", "20210904", "20210905", "20210906", "20210907", "20210908", "20210909"]
+
+FEATURE_MAP = ["email_links", "external_outlinks", "html_tags", "images",
+               "internal_outlinks", "meta", "scripts", "tables", "text"]
