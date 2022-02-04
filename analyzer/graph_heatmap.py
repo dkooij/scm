@@ -1,7 +1,7 @@
 """
 Visualize how predictions by ML models are made by plotting predictions for all values in a grid.
 Author: Daan Kooij
-Last modified: February 2nd, 2022
+Last modified: February 4th, 2022
 """
 
 import matplotlib.pyplot as plt
@@ -92,7 +92,7 @@ def draw_heatmaps(model_name, feature_pairs, rows, columns, tpd=None, figure=Non
     fig.suptitle("Visualisation of decisions made by " + model_name + " model")
     fig.tight_layout()
     if figure is None:
-        fig.savefig("figures/ml-static/heatmaps-important.png", dpi=400)
+        fig.savefig("figures/ml-static/" + model_name + "-heatmaps-important.png", dpi=400)
 
 
 def draw_all_heatmaps(model_name, tpd=None):
@@ -100,7 +100,7 @@ def draw_all_heatmaps(model_name, tpd=None):
     feature_pairs = [(x, y) for x in range(9) for y in range(9)]
     draw_heatmaps(model_name, feature_pairs, 9, 9, tpd=tpd, figure=fig)
     fig.tight_layout()
-    fig.savefig("figures/ml-static/heatmaps-all.png", dpi=300)
+    fig.savefig("figures/ml-static/" + model_name + "-heatmaps-all.png", dpi=300)
 
 
 # _tpd = load_training_pair_data(1000)
