@@ -1,12 +1,12 @@
 """
 Visualize how predictions by ML models are made by making predictions for all values in a grid.
 Author: Daan Kooij
-Last modified: February 1st, 2022
+Last modified: February 4th, 2022
 """
 
 import numpy as np
 from pyspark import SparkContext
-from pyspark.ml.classification import RandomForestClassificationModel
+from pyspark.ml.classification import LogisticRegressionModel, RandomForestClassificationModel
 from pyspark.ml.linalg import DenseVector
 from pyspark.sql import SparkSession
 
@@ -17,8 +17,11 @@ spark = SparkSession.builder.getOrCreate()
 
 
 def load_model(model_type, model_name):
+    model_path = "models/" + model_name + ".model"
     if model_type == "rf":
-        return RandomForestClassificationModel.load("models/" + model_name + ".model")
+        return RandomForestClassificationModel.load(model_path)
+    elif model_type == "lr":
+        return LogisticRegressionModel.load(model_path)
 
 
 def create_feature_grid(feature_statistics, feature1, feature2, resolution):
@@ -54,7 +57,7 @@ def create_heatmaps(model_type, model_name, feature_statistics, feature_pairs, r
         create_heatmap(model_name, model, feature_statistics, feature1, feature2, resolution)
 
 
-_model_type, _model_name = "rf", "rf"
+_model_type, _model_name = "lr", "lr"
 _feature_statistics = [(0, 3, 0), (0, 76, 5), (0, 86, 6), (0, 339, 41), (0, 37, 9),
                        (2, 792, 120), (0, 65, 14), (0, 8, 0), (6, 2186, 368)]
 _feature_pairs = [(x, y) for x in range(9) for y in range(9) if x != y]
