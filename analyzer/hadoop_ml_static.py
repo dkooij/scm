@@ -1,7 +1,7 @@
 """
 Train ML models to predict page text changes using static features.
 Author: Daan Kooij
-Last modified: February 3rd, 2022
+Last modified: February 4th, 2022
 """
 
 import hashlib
@@ -104,20 +104,20 @@ def train_random_forest(data_train, num_trees=20, max_depth=10, min_instances_pe
 def train_logistic_regression(data_train, num_folds=5):
     lr = LogisticRegression()
 
-    param_grid = ParamGridBuilder() \
-        .addGrid(lr.family, ["binomial", "multinomial"]) \
-        .addGrid(lr.elasticNetParam, [0.0, 1.0]) \
-        .addGrid(lr.regParam, [0.01, 0.1, 1, 10, 100]) \
-        .build()
-    cv = CrossValidator(estimator=lr, estimatorParamMaps=param_grid,
-                        evaluator=BinaryClassificationEvaluator(), numFolds=num_folds, seed=42)
+    # param_grid = ParamGridBuilder() \
+    #     .addGrid(lr.family, ["binomial", "multinomial"]) \
+    #     .addGrid(lr.elasticNetParam, [0.0, 1.0]) \
+    #     .addGrid(lr.regParam, [0.01, 0.1, 1, 10]) \
+    #     .build()
+    # cv = CrossValidator(estimator=lr, estimatorParamMaps=param_grid,
+    #                     evaluator=BinaryClassificationEvaluator(), numFolds=num_folds, seed=42)
 
-    cv = cv.fit(data_train)
-    best_model = cv.bestModel
-    # best_model = lr.fit(data_train)
+    # cv = cv.fit(data_train)
+    # best_model = cv.bestModel
+    best_model = lr.fit(data_train)
 
     print("Logistic Regression parameters:")
-    print("- Number of folds (cv):", num_folds)
+    # print("- Number of folds (cv):", num_folds)
     print("- Solver:", best_model.getOrDefault("family"))
     print("- Regularization penalty:", best_model.getOrDefault("elasticNetParam"))
     print("- Regularization penalty strength:", best_model.getOrDefault("regParam"))
