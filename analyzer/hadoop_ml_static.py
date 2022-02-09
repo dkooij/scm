@@ -1,7 +1,7 @@
 """
 Train ML models to predict page text changes using static features.
 Author: Daan Kooij
-Last modified: February 4th, 2022
+Last modified: February 9th, 2022
 """
 
 import hashlib
@@ -168,4 +168,31 @@ def train_evaluate(model_type, model_name):
     print("\n--------------------------------\n")
 
 
+def train_evaluate_subsets(model_type, model_name):
+    data_train_balanced, data_test = load_dataframes("data")
+
+    feature_subsets = [(x, y) for x in range(9) for y in range(9) if x < y]
+    for feature_subset in feature_subsets:
+        data_train_balanced_projection = select_feature_subset(data_train_balanced, feature_subset)
+        data_test_projection = select_feature_subset(data_test, feature_subset)
+
+        start_time = time.time()
+        if model_type == "rf":
+            trained_model = train_random_forest(data_train_balanced_projection, num_trees=50,
+                                                max_depth=15, min_instances_per_node=100)
+        else:
+            trained_model = train_logistic_regression(data_train_balanced_projection)
+        trained_model.save("models/projections/" + model_name + "-"
+                           + str(feature_subset[0]) + "-" + str(feature_subset[1]) + ".model")
+
+        print("- Used features:", str(feature_subset))
+        evaluate(trained_model, data_test_projection, model_type)
+        execution_time = int(time.time() - start_time)
+        print("\nExecution time:", execution_time, "seconds")
+        print("\n--------------------------------\n")
+
+
+train_evaluate("rf", "rf")
 train_evaluate("lr", "lr")
+# train_evaluate_subsets("rf", "rf")
+# train_evaluate_subsets("lr", "lr")
