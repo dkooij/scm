@@ -47,7 +47,7 @@ def create_heatmap(model_name, model, feature_statistics, feature1, feature2, re
     predictions = model.transform(feature_grid)
 
     def to_csv_line(rdd_row):
-        features, probability = rdd_row["features"], rdd_row["probability"][0]
+        features, probability = rdd_row["features"], rdd_row["probability"][1]
         if feature1 < feature2:
             return ",".join([str(int(features[0])), str(int(features[1])), str(probability)])
         else:
