@@ -116,5 +116,5 @@ _tpd = load_training_pair_data(1000)
 _fs = [(0, 3, 0), (0, 76, 5), (0, 86, 6), (0, 339, 41), (0, 37, 9),
        (2, 792, 120), (0, 65, 14), (0, 8, 0), (6, 2186, 368)]
 # draw_single_heatmap("rf", 5, 8, _fs)
-draw_heatmaps("rf", [(8, 5), (8, 6), (8, 3), (5, 6), (5, 3), (6, 3)], 2, 3, _fs, tpd=_tpd)
+draw_heatmaps("rf", [(8, 5), (8, 3), (8, 6), (5, 3), (5, 6), (3, 6)], 2, 3, _fs, tpd=_tpd)
 draw_all_heatmaps("rf", _fs)
