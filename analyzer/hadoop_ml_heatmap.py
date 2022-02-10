@@ -1,7 +1,7 @@
 """
 Visualize how predictions by ML models are made by making predictions for all values in a grid.
 Author: Daan Kooij
-Last modified: February 9th, 2022
+Last modified: February 10th, 2022
 """
 
 import numpy as np
@@ -54,7 +54,11 @@ def create_heatmap(model_name, model, feature_statistics, feature1, feature2, re
             return ",".join([str(int(features[1])), str(int(features[0])), str(probability)])
 
     output_path = "predicted/grid2/" + model_name + "-" + str(feature1) + "-" + str(feature2) + ".csv"
-    predictions.rdd.coalesce(1).map(to_csv_line).saveAsTextFile(output_path)
+
+    predictions_rdd = predictions.rdd
+    if feature1 > feature2:
+        predictions_rdd = predictions_rdd.sortBy(lambda r: (r["features"][1], r["features"][0]))
+    predictions_rdd.coalesce(1).map(to_csv_line).saveAsTextFile(output_path)
 
 
 def create_heatmaps(model_type, model_name, feature_statistics, feature_pairs, resolution):
