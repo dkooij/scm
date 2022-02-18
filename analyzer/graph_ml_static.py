@@ -29,7 +29,7 @@ def get_lr_regression_coefficients():
 def plot_rf_feature_importances(feature_importances):
     plt.figure()
     plt.bar([k for k, _ in feature_importances], [v for _, v in feature_importances], color=plt.cm.Dark2(0))
-    plt.title("Feature importance according to Random Forest model")
+    plt.title("Feature importances according to Random Forest model")
     plt.xlabel("Feature →")
     plt.ylabel("Importance →")
     plt.xticks(rotation=90)
@@ -43,7 +43,7 @@ def plot_lr_regression_coefficients(regression_coefficients):
     plt.figure()
     plt.bar([k for k, _ in regression_coefficients], [v for _, v in regression_coefficients],
             color=[plt.cm.Dark2(0 if v >= 0 else 1) for _, v in regression_coefficients])
-    plt.title("Regression coefficient according to Logistic Regression model")
+    plt.title("Regression coefficients according to Logistic Regression model")
     plt.xlabel("Feature →")
     plt.ylabel("Regression coefficient →")
     plt.xticks(rotation=90)
