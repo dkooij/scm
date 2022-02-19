@@ -1,7 +1,7 @@
 """
 Draw graphs based on results of static Machine Learning.
 Author: Daan Kooij
-Last modified: February 18th, 2022
+Last modified: February 19th, 2022
 """
 
 import matplotlib.pyplot as plt
@@ -24,6 +24,10 @@ def get_lr_regression_coefficients():
                                        (6, 0.018545431011434115),(7, -0.006648655035289558),
                                        (8, 0.00022509766872622422)], key=lambda t: abs(t[1]), reverse=True)
     return [(global_vars.FEATURE_MAP[k], v) for k, v in _regression_coefficients]
+
+
+def get_feature_subset_performance():
+    return [59.72, 62.93, 69.05, 72.7, 75.39, 77.02, 78.24, 78.75, 78.51]
 
 
 def plot_rf_feature_importances(feature_importances):
@@ -53,5 +57,18 @@ def plot_lr_regression_coefficients(regression_coefficients):
     print(" * plotted lr regression coefficients")
 
 
+def plot_feature_subset_performance(subset_performances):
+    plt.figure(figsize=(6.4, 3.2))
+    plt.plot(list(range(1, len(subset_performances) + 1)), subset_performances, linewidth=2.5, color=plt.cm.Dark2(0))
+    plt.title("Performance of RF model when trained with $\\it{n}$ top features")
+    plt.xlabel("$\\it{n}$ →")
+    plt.ylabel("Minimum recall →")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig("figures/ml-static/feature-subset-performance.png", dpi=400)
+    print(" * plotted feature subset performance")
+
+
 plot_rf_feature_importances(get_rf_feature_importances())
 plot_lr_regression_coefficients(get_lr_regression_coefficients())
+plot_feature_subset_performance(get_feature_subset_performance())
