@@ -1,7 +1,7 @@
 """
 Visualize how predictions by ML models are made by plotting predictions for all values in a grid.
 Author: Daan Kooij
-Last modified: February 10th, 2022
+Last modified: February 19th, 2022
 """
 
 from matplotlib.colors import ListedColormap
@@ -98,7 +98,7 @@ def draw_heatmaps(model_name, feature_pairs, rows, columns, feature_statistics, 
                 cs = [t[1] for t in tpd]  # One minus the target value because colormap is opposite.
                 ax.scatter(xs, ys, c=cs, s=2.0, cmap=ListedColormap(["red", "blue"]), vmin=0, vmax=1, zorder=10)
 
-    fig.suptitle("Visualisation of decisions made by " + model_name + " model")
+    fig.suptitle("Visualisation of decisions made by approximate " + str.upper(model_name) + " models")
     fig.tight_layout()
     if figure is None:
         fig.savefig("figures/ml-static/" + model_name + "-heatmaps-important.png", dpi=400)
