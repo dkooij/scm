@@ -1,7 +1,7 @@
 """
 Visualize how predictions by ML models are made by plotting predictions for all values in a grid.
 Author: Daan Kooij
-Last modified: February 19th, 2022
+Last modified: March 10th, 2022
 """
 
 from matplotlib.colors import ListedColormap
@@ -36,6 +36,12 @@ def load_training_pair_data(sample_size):
         data_sample.append((f0, 0))
         data_sample.append((f1, 1))
     return data_sample
+
+
+def save_dataset(dataset, filepath):
+    with open(filepath, "w") as file:
+        for features, target in dataset:
+            file.write(",".join(str(f) for f in features) + "," + str(target) + "\n")
 
 
 def draw_single_heatmap(model_name, feature1, feature2, feature_statistics, figure=None):
@@ -113,6 +119,7 @@ def draw_all_heatmaps(model_name, feature_statistics, tpd=None):
 
 
 _tpd = load_training_pair_data(1000)
+save_dataset(_tpd, "inputmisc/graph-heatmap-sample-dataset.csv")
 _fs = [(0, 3, 0), (0, 76, 5), (0, 86, 6), (0, 339, 41), (0, 37, 9),
        (2, 792, 120), (0, 65, 14), (0, 8, 0), (6, 2186, 368)]
 # draw_single_heatmap("rf", 5, 8, _fs)
