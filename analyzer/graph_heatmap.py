@@ -17,7 +17,7 @@ INPUT_DIR = "inputmisc/grid2"
 def load_training_pair_data(sample_size):
     features0, features1 = [], []
 
-    with open("inputmisc/static-training-pairs-combined-2-sample.csv") as file:
+    with open("inputmisc/static-training-pairs-combined-2.csv") as file:
         for line in file:
             parts = line.split(",")
             features = [int(x) for x in parts[1:10]]
