@@ -55,13 +55,13 @@ def plot_lr_regression_coefficients(regression_coefficients):
     plt.figure()
     plt.bar([k for k, _ in regression_coefficients], [v for _, v in regression_coefficients],
             color=[plt.cm.Dark2(0 if v >= 0 else 1) for _, v in regression_coefficients])
-    plt.title("Regression coefficients according to LR model (normalized)")
+    plt.title("Regression coefficients according to LR model (normalised)")
     plt.xlabel("Feature →")
     plt.ylabel("Regression coefficient →")
     plt.xticks(rotation=90)
     plt.grid()
     plt.tight_layout()
-    plt.savefig("figures/ml-static/lr-regression-coefficients-normalized.png", dpi=400)
+    plt.savefig("figures/ml-static/lr-regression-coefficients-normalised.png", dpi=400)
     print(" * plotted lr regression coefficients")
 
 
