@@ -1,7 +1,7 @@
 """
 Draw graphs based on results of static Machine Learning.
 Author: Daan Kooij
-Last modified: March 10th, 2022
+Last modified: March 11th, 2022
 """
 
 import matplotlib.pyplot as plt
@@ -35,7 +35,7 @@ def get_lr_regression_coefficients():
 
 
 def get_feature_subset_performance():
-    return [59.72, 62.93, 69.05, 72.7, 75.39, 77.02, 78.24, 78.75, 78.51]
+    return [59.72, 62.95, 68.99, 72.84, 75.48, 76.92, 78.39, 78.99, 78.48]
 
 
 def plot_rf_feature_importances(feature_importances):
