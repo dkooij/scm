@@ -1,7 +1,7 @@
 """
 Train ML models to predict page text changes using static features.
 Author: Daan Kooij
-Last modified: February 9th, 2022
+Last modified: March 11th, 2022
 """
 
 import hashlib
@@ -171,6 +171,8 @@ def train_evaluate(model_type, model_name):
 def train_evaluate_subsets(model_type, model_name):
     data_train_balanced, data_test = load_dataframes("data")
 
+    # feature_order = [8, 5, 3, 6, 2, 1, 4, 0, 7]
+    # feature_subsets = [sorted(feature_order[:l]) for l in range(1, len(feature_order) + 1)]
     feature_subsets = [(x, y) for x in range(9) for y in range(9) if x < y]
     for feature_subset in feature_subsets:
         data_train_balanced_projection = select_feature_subset(data_train_balanced, feature_subset)
