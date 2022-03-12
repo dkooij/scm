@@ -1,7 +1,7 @@
 """
 Train ML models to predict page text changes using static features.
 Author: Daan Kooij
-Last modified: March 11th, 2022
+Last modified: March 12th, 2022
 """
 
 import hashlib
@@ -126,7 +126,7 @@ def train_logistic_regression(data_train, num_folds=5):
     return best_model
 
 
-def evaluate(trained_model, data_test, model_type):
+def evaluate(trained_model, data_test, model_type, save_predictions=False):
     predictions = trained_model.transform(data_test)
 
     predictions_rdd = predictions.select("label", "prediction").rdd.map(
@@ -150,8 +150,19 @@ def evaluate(trained_model, data_test, model_type):
         print("\nModel coefficients:")
         print(trained_model.coefficients)
 
+    if save_predictions:
+        predictions_rdd = predictions.select("features", "label", "prediction").rdd.map(
+            lambda row: ([str(int(f)) for f in row["features"]], str(int(row["label"])), str(int(row["prediction"]))))
+        output_path = "predicted/" + model_type + ".csv"
 
-def train_evaluate(model_type, model_name):
+        def to_csv_line(rdd_row):
+            features, target, prediction = rdd_row
+            return ",".join(f for f in features) + "," + target + "," + prediction
+
+        predictions_rdd.map(to_csv_line).saveAsTextFile(output_path)
+
+
+def train_evaluate(model_type, model_name, save_model=True, save_predictions=False):
     # create_dataframes("extracted/static-training-pairs-combined-2.csv", "data")
     data_train_balanced, data_test = load_dataframes("data")
 
@@ -161,8 +172,9 @@ def train_evaluate(model_type, model_name):
                                             max_depth=15, min_instances_per_node=100)
     else:
         trained_model = train_logistic_regression(data_train_balanced)
-    trained_model.save("models/" + model_name + ".model")
-    evaluate(trained_model, data_test, model_type)
+    if save_model:
+        trained_model.save("models/" + model_name + ".model")
+    evaluate(trained_model, data_test, model_type, save_predictions=save_predictions)
     execution_time = int(time.time() - start_time)
     print("\nExecution time:", execution_time, "seconds")
     print("\n--------------------------------\n")
@@ -194,7 +206,7 @@ def train_evaluate_subsets(model_type, model_name):
         print("\n--------------------------------\n")
 
 
-train_evaluate("rf", "rf")
-train_evaluate("lr", "lr")
+train_evaluate("rf", "rf", save_model=False, save_predictions=True)
+# train_evaluate("lr", "lr")
 # train_evaluate_subsets("rf", "rf")
 # train_evaluate_subsets("lr", "lr")
