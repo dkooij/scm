@@ -1,7 +1,7 @@
 """
 Compute basic statistics about training pair features.
 Author: Daan Kooij
-Last modified: February 1st, 2022
+Last modified: March 12th, 2022
 """
 
 
@@ -39,26 +39,47 @@ def get_median(value_list):
 
 
 def get_value_statistics(value_list, ignore_extremes=0.):
-    value_list.sort()
     return ("min", get_minimum(value_list, ignore_extremes=ignore_extremes)), \
            ("max", get_maximum(value_list, ignore_extremes=ignore_extremes)), \
            ("avg", get_average(value_list, ignore_extremes=ignore_extremes)), \
            ("med", get_median(value_list))
 
 
-def training_pair_statistics(ignore_extremes=0.):
-    values = []
+def get_value_lists():
+    value_lists = []
 
     with open("inputmisc/static-training-pairs-combined-2.csv") as file:
         for line in file:
             parts = line.split(",")[1:10]
             for i, v in zip(range(len(parts)), parts):
-                if i >= len(values):
-                    values.append([])
-                values[i].append(int(v))
+                if i >= len(value_lists):
+                    value_lists.append([])
+                value_lists[i].append(int(v))
 
-    for value_list in values:
+    return [sorted(value_list) for value_list in value_lists]
+
+
+def training_pair_statistics(ignore_extremes=0.):
+    value_lists = get_value_lists()
+
+    for value_list in value_lists:
         print(get_value_statistics(value_list, ignore_extremes=ignore_extremes))
 
 
-training_pair_statistics(ignore_extremes=0.025)
+def get_intervals(num_intervals):
+    intervals = []
+    value_lists = get_value_lists()
+    num_values = len(value_lists[0])
+    interval_size = (num_values - 1) / num_intervals
+    edge_indices = [int(interval_size * i) for i in range(num_intervals + 1)]
+
+    for value_list in value_lists:
+        interval_edges = [value_list[i] for i in edge_indices]
+        interval_edges[-1] += 1  # To include last value in [start, end) intervals
+        intervals.append([(interval_edges[i], interval_edges[i + 1]) for i in range(num_intervals)])
+
+    return intervals
+
+
+# training_pair_statistics(ignore_extremes=0.025)
+print(get_intervals(10))
