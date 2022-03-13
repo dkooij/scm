@@ -1,7 +1,7 @@
 """
 Read feature change data and compute feature change statistics.
 Author: Daan Kooij
-Last modified: December 14th, 2021
+Last modified: March 13th, 2022
 """
 
 import ast
@@ -103,8 +103,8 @@ def plot_change_fractions(change_fractions):
     plt.figure()
     plt.bar([k for k, _ in change_fractions], [v for _, v in change_fractions], color=plt.cm.Dark2(0))
     plt.title("Probabilities that page features change in 24 hours")
-    plt.xlabel("Page feature")
-    plt.ylabel("Fraction changed")
+    plt.xlabel("Page feature →")
+    plt.ylabel("Fraction changed →")
     plt.xticks(rotation=90)
     plt.grid()
     plt.tight_layout()
@@ -131,8 +131,8 @@ def plot_change_amplitudes(fractions):
     plt.bar([k for k, _ in insert_fractions], [v for _, v in insert_fractions], color=plt.cm.Dark2(0))
     plt.bar([k for k, _ in delete_fractions], [-v for _, v in delete_fractions], color=plt.cm.Dark2(1))
     plt.title("Change amplitudes when features change")
-    plt.xlabel("Page feature")
-    plt.ylabel("Change amplitude")
+    plt.xlabel("Page feature →")
+    plt.ylabel("Change amplitude →")
     plt.xticks(rotation=90)
     plt.grid()
     plt.tight_layout()
@@ -161,8 +161,8 @@ def plot_text_change_categories(categories_list):
     plt.figure()
     plt.bar([k for k, _ in categories_list], [v for _, v in categories_list], color=plt.cm.Dark2(0))
     plt.title("Distribution over text change categories")
-    plt.xlabel("Change category")
-    plt.ylabel("Fraction of cases")
+    plt.xlabel("Change category →")
+    plt.ylabel("Fraction of cases →")
     plt.xticks(rotation=90)
     plt.grid()
     plt.tight_layout()
