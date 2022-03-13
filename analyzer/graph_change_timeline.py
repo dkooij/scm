@@ -1,7 +1,7 @@
 """
 Read binary change data and compute binary change statistics.
 Author: Daan Kooij
-Last modified: December 11th, 2021
+Last modified: March 13th, 2022
 """
 
 from collections import defaultdict
@@ -166,15 +166,15 @@ def draw_page_changes_per_day(changes_per_day, plot_multiple=False, corrected_da
         title = "Fraction of pages per day for which a given feature changes\n"
         plt.legend()
     else:
-        title = "Fraction of pages per day for which text changes "
-    title += "(corrected dataset)" if corrected_dataset else "(full dataset)"
+        title = "Fraction of pages per day for which text changes"
+    title += "" if corrected_dataset else " (full dataset)"
     plt.title(title)
-    plt.xlabel("Day number")
-    plt.ylabel("Fraction changed")
+    plt.xlabel("Day number →")
+    plt.ylabel("Fraction changed →")
     plt.grid()
     plt.tight_layout()
     if plot_multiple:
-        plt.savefig("figures/timeline/daily-changes-corrected.png", dpi=400)
+        plt.savefig("figures/timeline/daily-changes.png", dpi=400)
     else:
         plt.savefig("figures/timeline/daily-changes-full.png", dpi=400)
 
@@ -191,12 +191,12 @@ def draw_rare_page_changes(rare_page_changes):
 
 
 def draw_day_change_fractions_percentile(page_change_counts):
-    plt.figure()
+    plt.figure(figsize=(6.4, 3.2))
     x = np.linspace(0, 100, num=len(page_change_counts))
     plt.plot(x, page_change_counts, linewidth=2.5, color=plt.cm.Dark2(0))
     plt.title("Percentile plot of day change fractions")
-    plt.xlabel("Percentile")
-    plt.ylabel("Fraction of days changed")
+    plt.xlabel("Percentile (out of changing pages) →")
+    plt.ylabel("Fraction of days changed →")
     plt.grid()
     plt.tight_layout()
     plt.savefig("figures/timeline/daily-change-fractions-percentile.png", dpi=400)
@@ -219,8 +219,8 @@ def draw_page_changes_per_single_day(sunday_changes, tuesday_changes):
     plt.plot(day_numbers, sunday_changes["External outlinks"], label="External out-links (Sunday)",
              linewidth=2.5, color=plt.cm.Dark2(5))
     plt.title("Fraction of pages per single day for which a given feature changes")
-    plt.xlabel("Day occurrence")
-    plt.ylabel("Fraction changed")
+    plt.xlabel("Day occurrence →")
+    plt.ylabel("Fraction changed →")
     plt.legend()
     plt.grid()
     plt.tight_layout()
@@ -327,22 +327,30 @@ def draw_change_behaviour_per_week(change_matrix):
 
     ax_top.set_title("Change behaviour fractions per week")
     ax_top.legend()
-    plt.xlabel("Week number")
-    plt.ylabel("Change behaviour fraction")
+    plt.xlabel("Week number →")
+    plt.ylabel("Change behaviour fraction →")
     ax_bot.grid(axis="y")
     ax_top.grid(axis="y")
     plt.tight_layout()
     plt.savefig("figures/timeline/weekly-change-behaviour.png", dpi=400)
 
 
-def draw_same_change_behaviour_fractions(change_cube, limit_three_classes=False):
+def draw_same_change_behaviour_fractions(change_cube, limit_three_classes=True):
     # Percentage of pages that continue to exhibit same change behaviour
     # in following week, per change behaviour per week
     week_numbers = list(range(FIRST_WEEK, LAST_WEEK))
 
+    fractions_per_change_behaviour = [[] for _ in range(len(change_cube[0]))]
+    labels = [str(i) for i in range(8)]
+    for change_matrix in change_cube:
+        for i in range(len(change_matrix)):
+            week_cb_same = change_matrix[i][i]
+            week_cb_total = sum(change_matrix[i])
+            fractions_per_change_behaviour[i].append(week_cb_same / week_cb_total)
+
     if limit_three_classes:
-        fractions_per_change_behaviour = [[] for _ in range(3)]
-        labels = ["Never (0)", "Sometimes (1-6)", "Always (7)"]
+        fractions_per_change_behaviour_3 = [[] for _ in range(3)]
+        labels_3 = ["Never (0)", "1-6", "Always (7)"]
         for change_matrix in change_cube:
             week_never_same, week_never_total = change_matrix[0][0], sum(change_matrix[0])
             week_sometimes_same, week_sometimes_total = 0, 0
@@ -352,36 +360,30 @@ def draw_same_change_behaviour_fractions(change_cube, limit_three_classes=False)
                 week_sometimes_total += sum(change_matrix[i])
             week_always_same, week_always_total = change_matrix[7][7], sum(change_matrix[7])
 
-            fractions_per_change_behaviour[0].append(week_never_same / week_never_total)
-            fractions_per_change_behaviour[1].append(week_sometimes_same / week_sometimes_total)
-            fractions_per_change_behaviour[2].append(week_always_same / week_always_total)
-    else:
-        fractions_per_change_behaviour = [[] for _ in range(len(change_cube[0]))]
-        labels = [str(i) for i in range(8)]
-        for change_matrix in change_cube:
-            for i in range(len(change_matrix)):
-                week_cb_same = change_matrix[i][i]
-                week_cb_total = sum(change_matrix[i])
-                fractions_per_change_behaviour[i].append(week_cb_same / week_cb_total)
+            fractions_per_change_behaviour_3[0].append(week_never_same / week_never_total)
+            fractions_per_change_behaviour_3[1].append(week_sometimes_same / week_sometimes_total)
+            fractions_per_change_behaviour_3[2].append(week_always_same / week_always_total)
+        # fractions_per_change_behaviour.append(fractions_per_change_behaviour_3[1])
+        # labels.append(labels_3[1])
 
     plt.figure()
     for i, fractions_list in zip(range(len(fractions_per_change_behaviour)), fractions_per_change_behaviour):
-        color = plt.cm.Dark2(7) if limit_three_classes and i == 2 else plt.cm.Dark2(i)
+        color = plt.cm.Dark2(i)
         plt.plot(week_numbers, fractions_list, linewidth=2.5, color=color, label=labels[i])
+
     if limit_three_classes:
-        title = "Fraction of pages that continue to exhibit the same change\n" \
-                "behaviour in the following week (reduced to three classes)"
-    else:
-        title = "Fraction of pages that continue to exhibit\n" \
-                "the same change behaviour in the following week"
+        plt.plot(week_numbers, fractions_per_change_behaviour_3[1],
+                 linewidth=2.5, color=plt.cm.Dark2(1), label=labels_3[1], linestyle=(0, (3, 2)))
+
+    title = "Fraction of pages that continue to exhibit\n" \
+            "the same change behaviour in the following week"
     plt.title(title)
-    plt.xlabel("Week number")
-    plt.ylabel("Fraction")
+    plt.xlabel("Week number →")
+    plt.ylabel("Fraction →")
     plt.legend()
     plt.grid()
     plt.tight_layout()
-    plt.savefig("figures/timeline/weekly-same-change-behaviour" +
-                ("-three-classes" if limit_three_classes else "") + ".png", dpi=400)
+    plt.savefig("figures/timeline/weekly-same-change-behaviour.png", dpi=400)
 
 
 def draw_same_change_behaviour_fractions_combined(change_cube, limit_three_classes=False):
@@ -406,7 +408,7 @@ def draw_same_change_behaviour_fractions_combined(change_cube, limit_three_class
                 total += sum(change_matrix[i])
             fractions.append(week_same / total)
 
-    plt.figure()
+    plt.figure(figsize=(6.4, 3.2))
     plt.plot(week_numbers, fractions, linewidth=2.5, color=plt.cm.Dark2(0))
     if limit_three_classes:
         title = "Fraction of pages that continue to exhibit the same change\n" \
@@ -416,8 +418,8 @@ def draw_same_change_behaviour_fractions_combined(change_cube, limit_three_class
         title = "Fraction of pages that continue to exhibit the same change\n" \
                 "behaviour in the following week (with change behaviours combined)"
     plt.title(title)
-    plt.xlabel("Week number")
-    plt.ylabel("Fraction")
+    plt.xlabel("Week number →")
+    plt.ylabel("Fraction →")
     plt.grid()
     plt.tight_layout()
     plt.savefig("figures/timeline/weekly-same-change-behaviour-combined" +
@@ -457,7 +459,7 @@ def draw_neighbouring_change_behaviour_fractions(change_cube, limit_three_classe
                     week_neighbouring += change_matrix[i][i + 1]
                 fractions_per_change_behaviour[i].append(week_neighbouring / week_cb_total)
 
-    plt.figure()
+    plt.figure(figsize=(6.4, 3.2) if limit_three_classes else (6.4, 4.8))
     for i, fractions_list in zip(range(len(fractions_per_change_behaviour)), fractions_per_change_behaviour):
         color = plt.cm.Dark2(7) if limit_three_classes and i == 2 else plt.cm.Dark2(i)
         plt.plot(week_numbers, fractions_list, linewidth=2.5, color=color, label=labels[i])
@@ -468,8 +470,8 @@ def draw_neighbouring_change_behaviour_fractions(change_cube, limit_three_classe
         title = "Fraction of pages that exhibit neighbouring\n" \
                 "change behaviour in the following week"
     plt.title(title)
-    plt.xlabel("Week number")
-    plt.ylabel("Fraction")
+    plt.xlabel("Week number →")
+    plt.ylabel("Fraction →")
     plt.legend()
     plt.grid()
     plt.tight_layout()
@@ -506,19 +508,19 @@ cm0, cc0, cpd0 = normalize_results(cm0, cc0, cpd0)
 _, _, cpd0_sun = normalize_results(cm0_backup, cc0, cpd0_sun)
 _, _, cpd0_tue = normalize_results(cm0_backup, cc0, cpd0_tue)
 
-# cpp, pcpd = compute_changes_per_page()
+cpp, pcpd = compute_changes_per_page()
 # rpc = compute_rare_changes(cpp, pcpd)
-# dcf = compute_day_change_fractions(cpp)
+dcf = compute_day_change_fractions(cpp)
 
-# acb = compute_average_change_behaviour(cm0)
+acb = compute_average_change_behaviour(cm0)
 
 
 # DAILY CHANGES PLOTS
 # draw_page_changes_per_day(cpd)
 # draw_rare_page_changes(rpc)
-# draw_day_change_fractions_percentile(dcf)
-# draw_page_changes_per_day(cpd0, plot_multiple=True, corrected_dataset=True)
-# draw_page_changes_per_single_day(cpd0_sun, cpd0_tue)
+draw_day_change_fractions_percentile(dcf)
+draw_page_changes_per_day(cpd0, plot_multiple=True, corrected_dataset=True)
+draw_page_changes_per_single_day(cpd0_sun, cpd0_tue)
 
 # WEEKLY CHANGES PLOTS ALLUVIAL
 # draw_alluvial_plot(cc0["Page text"], "page text")
@@ -526,14 +528,14 @@ _, _, cpd0_tue = normalize_results(cm0_backup, cc0, cpd0_tue)
 # draw_alluvial_plot(cc0["External outlinks"], "external out-links")
 
 # WEEKLY CHANGES PLOTS NORMAL
-# draw_average_change_behaviour_fractions(acb, "text")
-# draw_average_change_behaviour_fractions(acb, "other")
-# draw_change_behaviour_per_week(cm0["Page text"])
-# draw_same_change_behaviour_fractions(cc0["Page text"])
-# draw_same_change_behaviour_fractions_combined(cc0["Page text"])
-# draw_neighbouring_change_behaviour_fractions(cc0["Page text"])
+draw_average_change_behaviour_fractions(acb, "text")
+draw_average_change_behaviour_fractions(acb, "other")
+draw_change_behaviour_per_week(cm0["Page text"])
+draw_same_change_behaviour_fractions(cc0["Page text"])
+draw_same_change_behaviour_fractions_combined(cc0["Page text"])
+draw_neighbouring_change_behaviour_fractions(cc0["Page text"])
 
 # WEEKLY CHANGES PLOTS THREE CLASSES
 # draw_same_change_behaviour_fractions(cc0["Page text"], limit_three_classes=True)
-# draw_same_change_behaviour_fractions_combined(cc0["Page text"], limit_three_classes=True)
-# draw_neighbouring_change_behaviour_fractions(cc0["Page text"], limit_three_classes=True)
+draw_same_change_behaviour_fractions_combined(cc0["Page text"], limit_three_classes=True)
+draw_neighbouring_change_behaviour_fractions(cc0["Page text"], limit_three_classes=True)
