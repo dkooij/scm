@@ -2,7 +2,8 @@
 
 This repository contains the code used to generate the results for the research
 titled "A Study on the Evolution of the Dutch Web" by Daan Kooij. This project
-served as the graduation assignment for his Master in Computer Science.
+served as the graduation assignment for his Master degree in Computer Science at
+the University of Twente.
 
 ## Abstract
 This study investigates the evolution of the Dutch Web. In particular, it
