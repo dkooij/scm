@@ -1,7 +1,7 @@
 """
 Read feature change data and compute feature change statistics.
 Author: Daan Kooij
-Last modified: March 13th, 2022
+Last modified: April 23rd, 2022
 """
 
 import ast
@@ -10,6 +10,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import csv_reader
+
+
+FEATURE_NAME_MAPPING = {"email_links": "E-mail addresses", "external_outlinks": "External out-links",
+                        "html_tags": "HTML tags", "images": "Images", "internal_outlinks": "Internal out-links",
+                        "meta": "Meta properties", "scripts": "Scripts", "tables": "Tables", "text": "Page text"}
+
+
+def _format_feature_names(dictionary):
+    return dict((e_name, dictionary[i_name]) for (i_name, e_name) in FEATURE_NAME_MAPPING.items())
 
 
 def compute_change_fractions(differences_file_path):
@@ -42,6 +51,7 @@ def compute_change_fractions(differences_file_path):
         return dict((k, v / total) for (k, v) in count_dict.items()), tuple(reversed(informative_list))
 
     fractions, informative_tuple = compute(differences_file_path)
+    fractions = _format_feature_names(fractions)
     fractions_sorted = sorted(fractions.items(), key=lambda t: t[1], reverse=True)
     return fractions_sorted, informative_tuple
 
@@ -65,7 +75,8 @@ def compute_change_amplitudes(differences_file_path):
                dict((k, v / changes_dict[k]) for (k, v) in del_fractions.items()), \
                ins_fractions_lists, del_fractions_lists
 
-    insert_fractions, delete_fractions, ins_fractions_lists, del_fractions_lists = compute(differences_file_path)
+    insert_fractions, delete_fractions, ins_fractions_lists, del_fractions_lists = \
+        (_format_feature_names(d) for d in compute(differences_file_path))
     sorted_fractions = sorted(list(zip(insert_fractions.items(), delete_fractions.items())),
                               key=lambda t: t[0][1] + t[1][1], reverse=True)
 
@@ -100,7 +111,7 @@ def get_text_change_categories(csv_file_path):
 
 
 def plot_change_fractions(change_fractions):
-    plt.figure()
+    plt.figure(figsize=(6.4, 4.0))
     plt.bar([k for k, _ in change_fractions], [v for _, v in change_fractions], color=plt.cm.Dark2(0))
     plt.title("Probabilities that page features change in 24 hours")
     plt.xlabel("Page feature →")
@@ -114,9 +125,9 @@ def plot_change_fractions(change_fractions):
 
 def plot_informative_tuple(informative_tuple):
     new_informative_tuple = (informative_tuple[1], informative_tuple[0], informative_tuple[2] + informative_tuple[3])
-    labels = ("Informative", "Both", "Uninformative")
+    labels = ("Only informative", "Both types", "Only uninformative")
 
-    plt.figure()
+    plt.figure(figsize=(6.4, 3.2))
     plt.pie(new_informative_tuple, labels=labels, normalize=True, startangle=90, counterclock=False,
             colors=plt.cm.Dark2.colors)
     plt.title("Fraction of changed pages that undergo (un)informative changes")
@@ -127,7 +138,7 @@ def plot_informative_tuple(informative_tuple):
 
 def plot_change_amplitudes(fractions):
     (insert_fractions, delete_fractions) = fractions
-    plt.figure()
+    plt.figure(figsize=(6.4, 4.4))
     plt.bar([k for k, _ in insert_fractions], [v for _, v in insert_fractions], color=plt.cm.Dark2(0))
     plt.bar([k for k, _ in delete_fractions], [-v for _, v in delete_fractions], color=plt.cm.Dark2(1))
     plt.title("Change amplitudes when features change")
@@ -158,7 +169,7 @@ def plot_change_amplitude_percentile(fractions_lists):
 
 
 def plot_text_change_categories(categories_list):
-    plt.figure()
+    plt.figure(figsize=(6.4, 4.4))
     plt.bar([k for k, _ in categories_list], [v for _, v in categories_list], color=plt.cm.Dark2(0))
     plt.title("Distribution over text change categories")
     plt.xlabel("Change category →")
