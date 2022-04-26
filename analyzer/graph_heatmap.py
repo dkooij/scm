@@ -1,11 +1,12 @@
 """
 Visualize how predictions by ML models are made by plotting predictions for all values in a grid.
 Author: Daan Kooij
-Last modified: March 10th, 2022
+Last modified: April 26th, 2022
 """
 
 from matplotlib.colors import ListedColormap
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import random
 
 import global_vars
@@ -75,6 +76,10 @@ def draw_single_heatmap(model_name, feature1, feature2, feature_statistics, figu
     median_f1, median_f2 = feature_statistics[feature1][2], feature_statistics[feature2][2]
     fig.set_xscale("symlog", linthresh=max(median_f1, 1))
     fig.set_yscale("symlog", linthresh=max(median_f2, 1))
+    minor_tick_locator = ticker.LogLocator(base=10.0, subs=list(range(2, 10)))
+    fig.xaxis.set_minor_locator(minor_tick_locator)
+    fig.yaxis.set_minor_locator(minor_tick_locator)
+
     fig.plot([median_f1, median_f1], [feature_statistics[feature2][0], feature_statistics[feature2][1]],
              color="black", linewidth=3.0, linestyle=(0, (3, 2)))
     fig.plot([feature_statistics[feature1][0], feature_statistics[feature1][1]], [median_f2, median_f2],
@@ -92,8 +97,11 @@ def draw_heatmaps(model_name, feature_pairs, rows, columns, feature_statistics, 
         plot_index += 1
         if x != y:
             ax = fig.add_subplot(rows, columns, plot_index)
-            plt.xlabel(global_vars.FEATURE_MAP[x] + " →")
-            plt.ylabel(global_vars.FEATURE_MAP[y] + " →")
+            xlabel, ylabel = global_vars.FEATURE_MAP[x], global_vars.FEATURE_MAP[y]
+            xlabel = xlabel + " (lines)" if xlabel == "Page text" else xlabel
+            ylabel = ylabel + " (lines)" if ylabel == "Page text" else ylabel
+            plt.xlabel(xlabel + " →")
+            plt.ylabel(ylabel + " →")
             if figure is not None:
                 ax.get_xaxis().set_ticks([])
                 ax.get_yaxis().set_ticks([])
@@ -123,5 +131,7 @@ save_dataset(_tpd, "inputmisc/graph-heatmap-sample-dataset.csv")
 _fs = [(0, 3, 0), (0, 76, 5), (0, 86, 6), (0, 339, 41), (0, 37, 9),
        (2, 792, 120), (0, 65, 14), (0, 8, 0), (6, 2186, 368)]
 # draw_single_heatmap("rf", 5, 8, _fs)
+draw_heatmaps("lr", [(8, 5), (8, 3), (8, 6), (5, 3), (5, 6), (3, 6)], 2, 3, _fs, tpd=_tpd)
+draw_all_heatmaps("lr", _fs)
 draw_heatmaps("rf", [(8, 5), (8, 3), (8, 6), (5, 3), (5, 6), (3, 6)], 2, 3, _fs, tpd=_tpd)
 draw_all_heatmaps("rf", _fs)
