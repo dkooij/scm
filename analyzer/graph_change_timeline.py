@@ -1,7 +1,7 @@
 """
 Read binary change data and compute binary change statistics.
 Author: Daan Kooij
-Last modified: March 13th, 2022
+Last modified: April 26th, 2022
 """
 
 from collections import defaultdict
@@ -156,7 +156,7 @@ def normalize_results(cm_dict, cc_dict, cpd_dict):
 def draw_page_changes_per_day(changes_per_day, plot_multiple=False, corrected_dataset=False):
     day_numbers = list(range(2, len(changes_per_day["Page text"]) + 2))
 
-    plt.figure()
+    plt.figure(figsize=(6.4, 4.2))
     plt.plot(day_numbers, changes_per_day["Page text"], label="Page text", linewidth=2.5, color=plt.cm.Dark2(0))
     if plot_multiple:
         plt.plot(day_numbers, changes_per_day["Internal outlinks"], label="Internal out-links",
@@ -205,7 +205,7 @@ def draw_day_change_fractions_percentile(page_change_counts):
 def draw_page_changes_per_single_day(sunday_changes, tuesday_changes):
     day_numbers = list(range(1, len(sunday_changes["Page text"]) + 1))
 
-    plt.figure()
+    plt.figure(figsize=(6.4, 4.4))
     plt.plot(day_numbers, tuesday_changes["Page text"], label="Page text (Tuesday)",
              linewidth=2.5, color=plt.cm.Dark2(0))
     plt.plot(day_numbers, sunday_changes["Page text"], label="Page text (Sunday)",
@@ -279,7 +279,7 @@ def draw_alluvial_plot(change_cube, change_type):
 
 
 def draw_average_change_behaviour_fractions(average_change_behaviour, change_type="other"):
-    fig = plt.figure(figsize=(6.4, 3.2 * (1.5 if change_type == "text" else 1)))
+    fig = plt.figure(figsize=(6.4, 3.2))
     if change_type == "text":
         change_behaviour_dict = {"Page text": average_change_behaviour["Page text"]}
     else:
