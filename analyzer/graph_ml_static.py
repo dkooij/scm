@@ -1,7 +1,7 @@
 """
 Draw graphs based on results of static Machine Learning.
 Author: Daan Kooij
-Last modified: March 11th, 2022
+Last modified: April 26th, 2022
 """
 
 import matplotlib.pyplot as plt
@@ -39,7 +39,7 @@ def get_feature_subset_performance():
 
 
 def plot_rf_feature_importances(feature_importances):
-    plt.figure()
+    plt.figure(figsize=(6.4, 4.0))
     plt.bar([k for k, _ in feature_importances], [v for _, v in feature_importances], color=plt.cm.Dark2(0))
     plt.title("Feature importances according to Random Forest model")
     plt.xlabel("Feature →")
@@ -52,7 +52,7 @@ def plot_rf_feature_importances(feature_importances):
 
 
 def plot_lr_regression_coefficients(regression_coefficients):
-    plt.figure()
+    plt.figure(figsize=(6.4, 4.0))
     plt.bar([k for k, _ in regression_coefficients], [v for _, v in regression_coefficients],
             color=[plt.cm.Dark2(0 if v >= 0 else 1) for _, v in regression_coefficients])
     plt.title("Regression coefficients according to LR model (normalised)")
